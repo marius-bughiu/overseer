@@ -229,7 +229,7 @@ pub fn parse_api_devices(json: &str, now: DateTime<Utc>) -> Result<Vec<Device>> 
             }
         })
         .collect();
-    devices.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    devices.sort_by_key(|d| d.name.to_lowercase());
     Ok(devices)
 }
 
