@@ -1,0 +1,45 @@
+[package]
+name = "overseer"
+description = "Overseer — a cross-platform Tailscale remote desktop manager (RDP & VNC)."
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+default-run = "overseer"
+
+# The library is what Tauri's mobile entry point links against.
+[lib]
+name = "overseer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+overseer-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-os = "2"
+tauri-plugin-stronghold = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-dialog = "2"
+
+# HTTP client for the Tailscale REST API. rustls avoids a system OpenSSL
+# dependency, which keeps mobile builds simple.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["macros", "process", "rt-multi-thread"] }
+log = "0.4"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
+
+[features]
+# This feature is used by `tauri-build` and the Tauri CLI; do not remove it.
+custom-protocol = ["tauri/custom-protocol"]

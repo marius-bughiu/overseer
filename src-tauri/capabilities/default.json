@@ -1,0 +1,19 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capabilities required by the Overseer main window.",
+  "windows": ["main"],
+  "platforms": ["linux", "macOS", "windows", "android", "iOS"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-focus",
+    "opener:default",
+    "opener:allow-open-url",
+    "opener:allow-open-path",
+    "os:default",
+    "dialog:default",
+    "clipboard-manager:default",
+    "clipboard-manager:allow-write-text",
+    "stronghold:default"
+  ]
+}

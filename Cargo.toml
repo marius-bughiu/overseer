@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = ["crates/overseer-core", "src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Marius Bughiu"]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/marius-bughiu/overseer"
+rust-version = "1.77"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+thiserror = "2"
+overseer-core = { path = "crates/overseer-core" }
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
