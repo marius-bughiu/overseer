@@ -44,7 +44,9 @@ impl From<std::io::Error> for AppError {
 }
 
 impl Serialize for AppError {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    // Use the fully-qualified std Result here: the `Result<T>` alias below
+    // shadows it in this module and only takes one type parameter.
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
