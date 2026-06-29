@@ -92,6 +92,8 @@ export interface Settings {
   manualHosts: ManualHost[];
   /** Reusable command snippets for terminal sessions. */
   snippets: Snippet[];
+  /** Path to a settings file in a synced folder (Syncthing/Dropbox/etc.). */
+  syncPath: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -109,6 +111,7 @@ export const DEFAULT_SETTINGS: Settings = {
   history: [],
   manualHosts: [],
   snippets: [],
+  syncPath: "",
 };
 
 /** A TOTP (2FA) account stored in the vault. */

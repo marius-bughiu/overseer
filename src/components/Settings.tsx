@@ -7,6 +7,7 @@ import {
   Lock,
   LockOpen,
   Plus,
+  RefreshCw,
   Terminal,
   Trash2,
   XCircle,
@@ -38,6 +39,10 @@ export function Settings() {
   const exportSettings = useStore((s) => s.exportSettings);
   const importSettings = useStore((s) => s.importSettings);
   const importCredentials = useStore((s) => s.importCredentials);
+  const chooseSyncFile = useStore((s) => s.chooseSyncFile);
+  const syncPush = useStore((s) => s.syncPush);
+  const syncPull = useStore((s) => s.syncPull);
+  const syncPath = useStore((s) => s.settings.syncPath);
   const language = useStore((s) => s.settings.language);
   const t = useT();
 
@@ -305,6 +310,43 @@ export function Settings() {
           <button className="btn-ghost" onClick={() => void importSettings()}>
             Import settings
           </button>
+        </div>
+
+        <div className="mt-5 border-t border-ink-800 pt-4">
+          <h3 className="inline-flex items-center gap-2 text-sm font-medium text-slate-200">
+            <RefreshCw size={14} /> Settings sync
+          </h3>
+          <p className="mt-1 text-sm text-slate-400">
+            Point this at a file inside a folder you already sync (Syncthing,
+            Dropbox, iCloud Drive, …) to move your non-secret settings between
+            devices. Secrets never leave the vault.
+          </p>
+          {syncPath ? (
+            <p className="mt-2 truncate font-mono text-xs text-slate-500">
+              {syncPath}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-slate-500">No sync file chosen.</p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button className="btn-ghost" onClick={() => void chooseSyncFile()}>
+              {syncPath ? "Change file" : "Choose file"}
+            </button>
+            <button
+              className="btn-ghost"
+              disabled={!syncPath}
+              onClick={() => void syncPush()}
+            >
+              Push now
+            </button>
+            <button
+              className="btn-ghost"
+              disabled={!syncPath}
+              onClick={() => void syncPull()}
+            >
+              Pull now
+            </button>
+          </div>
         </div>
       </section>
 

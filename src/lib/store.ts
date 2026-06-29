@@ -164,6 +164,9 @@ interface AppStore {
   exportSettings: () => Promise<void>;
   importSettings: () => Promise<void>;
   importCredentials: () => Promise<void>;
+  chooseSyncFile: () => Promise<void>;
+  syncPush: () => Promise<void>;
+  syncPull: () => Promise<void>;
   pushToast: (kind: Toast["kind"], message: string) => void;
   dismissToast: (id: number) => void;
 
@@ -372,6 +375,52 @@ export const useStore = create<AppStore>((set, get) => ({
       );
     } catch (e) {
       get().pushToast("error", `Credential import failed: ${String(e)}`);
+    }
+  },
+
+  async chooseSyncFile() {
+    try {
+      const path = await saveDialog({ defaultPath: "overseer-settings.json" });
+      if (!path) return;
+      await get().updateSettings({ syncPath: path });
+      // Seed the file with the current settings.
+      await exportSettingsFile(path, JSON.stringify(get().settings, null, 2));
+      get().pushToast("success", "Settings sync file set.");
+    } catch (e) {
+      get().pushToast("error", `Could not set sync file: ${String(e)}`);
+    }
+  },
+
+  async syncPush() {
+    const path = get().settings.syncPath;
+    if (!path) return;
+    try {
+      await exportSettingsFile(path, JSON.stringify(get().settings, null, 2));
+      get().pushToast("success", "Pushed settings to sync file.");
+    } catch (e) {
+      get().pushToast("error", `Push failed: ${String(e)}`);
+    }
+  },
+
+  async syncPull() {
+    const path = get().settings.syncPath;
+    if (!path) return;
+    try {
+      const json = await importSettingsFile(path);
+      const incoming = JSON.parse(json) as Partial<Settings>;
+      // Keep our own sync path; otherwise adopt the synced settings.
+      const next = {
+        ...DEFAULT_SETTINGS,
+        ...get().settings,
+        ...incoming,
+        syncPath: path,
+      };
+      applyTheme(next.theme);
+      set({ settings: next });
+      await saveSettings(next);
+      get().pushToast("success", "Pulled settings from sync file.");
+    } catch (e) {
+      get().pushToast("error", `Pull failed: ${String(e)}`);
     }
   },
 

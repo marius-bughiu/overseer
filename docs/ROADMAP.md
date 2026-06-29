@@ -81,7 +81,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Command palette & keyboard shortcuts (Cmd/Ctrl-K)
 - ✅ Localization (i18n) — dependency-free framework with English, Spanish,
   German, French; language picker in Settings (string coverage expanding)
-- ⏳ Settings sync across devices
+- ✅ Settings sync across devices — file-based, via any synced folder
+  (Syncthing / Dropbox / iCloud), push & pull; secrets stay in the vault
 
 ## 7. Team / enterprise (later, optional — must not add telemetry)
 
