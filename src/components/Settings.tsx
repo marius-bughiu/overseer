@@ -13,6 +13,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { relativeTime } from "../lib/devices";
 import { useStore } from "../lib/store";
 import type { DiscoveryMethod } from "../lib/types";
+import { TotpPanel } from "./TotpPanel";
 import { VaultGate } from "./VaultGate";
 
 export function Settings() {
@@ -212,6 +213,8 @@ export function Settings() {
           </li>
         </ul>
       </section>
+
+      {vaultUnlocked && <TotpPanel />}
 
       {history.length > 0 && (
         <section className="card p-5">

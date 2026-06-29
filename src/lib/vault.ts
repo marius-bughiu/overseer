@@ -5,7 +5,7 @@ import {
 } from "@tauri-apps/plugin-stronghold";
 import { appDataDir } from "@tauri-apps/api/path";
 
-import type { Credential } from "./types";
+import type { Credential, TotpAccount } from "./types";
 
 /**
  * Encrypted credential vault, backed by the Tauri Stronghold plugin (IOTA
@@ -107,6 +107,21 @@ class Vault {
       await store.remove(`secret:${name}`);
     }
     await this.persist();
+  }
+
+  /** All stored TOTP accounts. */
+  async getTotpAccounts(): Promise<TotpAccount[]> {
+    const raw = await this.getSecret("totp_accounts");
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw) as TotpAccount[];
+    } catch {
+      return [];
+    }
+  }
+
+  async setTotpAccounts(accounts: TotpAccount[]): Promise<void> {
+    await this.setSecret("totp_accounts", JSON.stringify(accounts));
   }
 
   async getCredential(deviceId: string): Promise<Credential | null> {

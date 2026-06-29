@@ -80,6 +80,14 @@ export const DEFAULT_SETTINGS: Settings = {
   history: [],
 };
 
+/** A TOTP (2FA) account stored in the vault. */
+export interface TotpAccount {
+  id: string;
+  label: string;
+  /** base32 secret. */
+  secret: string;
+}
+
 /** A credential entry as stored in the Stronghold vault. */
 export interface Credential {
   username: string;

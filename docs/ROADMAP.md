@@ -66,7 +66,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ⏳ External password-manager import (KeePass / Bitwarden / 1Password)
 - ⏳ SSH key management & agent
 - ⏳ Host-key verification & trust store
-- ⏳ TOTP / 2FA secret storage
+- ✅ TOTP / 2FA secret storage (vault-stored, live codes)
 
 ## 6. Experience & platform
 
