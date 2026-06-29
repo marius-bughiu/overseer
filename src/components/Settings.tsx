@@ -29,6 +29,8 @@ export function Settings() {
   const pushToast = useStore((s) => s.pushToast);
   const autoLockMinutes = useStore((s) => s.settings.autoLockMinutes);
   const history = useStore((s) => s.settings.history);
+  const exportSettings = useStore((s) => s.exportSettings);
+  const importSettings = useStore((s) => s.importSettings);
 
   const [gateOpen, setGateOpen] = useState(false);
   const isMobile = platform === "android" || platform === "ios";
@@ -232,6 +234,24 @@ export function Settings() {
             App / RD Client · RealVNC Viewer
           </li>
         </ul>
+      </section>
+
+      <section className="card p-5">
+        <h2 className="text-sm font-semibold text-slate-100">
+          Backup &amp; restore
+        </h2>
+        <p className="mt-1 text-sm text-slate-400">
+          Export or import your non-secret settings (discovery, folders,
+          profiles, favorites). Secrets stay in the encrypted vault.
+        </p>
+        <div className="mt-3 flex gap-2">
+          <button className="btn-ghost" onClick={() => void exportSettings()}>
+            Export settings
+          </button>
+          <button className="btn-ghost" onClick={() => void importSettings()}>
+            Import settings
+          </button>
+        </div>
       </section>
 
       {vaultUnlocked && <TotpPanel />}

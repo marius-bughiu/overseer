@@ -76,6 +76,16 @@ export function resetKnownHosts(): Promise<void> {
   return invoke("reset_known_hosts");
 }
 
+/** Write settings JSON to a file path. */
+export function exportSettingsFile(path: string, json: string): Promise<void> {
+  return invoke("export_settings", { path, json });
+}
+
+/** Read a settings JSON file path, returning its contents. */
+export function importSettingsFile(path: string): Promise<string> {
+  return invoke("import_settings", { path });
+}
+
 // --- SFTP file transfer ---
 
 export interface SftpFile {

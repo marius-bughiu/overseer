@@ -1,8 +1,15 @@
 import { create } from "zustand";
 
 import {
+  open as openDialog,
+  save as saveDialog,
+} from "@tauri-apps/plugin-dialog";
+
+import {
   discoverDevices,
+  exportSettingsFile,
   hostPlatform,
+  importSettingsFile,
   loadSettings,
   openRdpSession,
   openSshSession,
@@ -97,6 +104,8 @@ interface AppStore {
   setTheme: (theme: Theme) => Promise<void>;
   setConnectTarget: (device: Device | null) => void;
   setPaletteOpen: (open: boolean) => void;
+  exportSettings: () => Promise<void>;
+  importSettings: () => Promise<void>;
   pushToast: (kind: Toast["kind"], message: string) => void;
   dismissToast: (id: number) => void;
 
@@ -219,6 +228,33 @@ export const useStore = create<AppStore>((set, get) => ({
   setFilter: (filter) => set({ filter }),
   setConnectTarget: (connectTarget) => set({ connectTarget }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+
+  async exportSettings() {
+    try {
+      const path = await saveDialog({ defaultPath: "overseer-settings.json" });
+      if (!path) return;
+      await exportSettingsFile(path, JSON.stringify(get().settings, null, 2));
+      get().pushToast("success", "Settings exported.");
+    } catch (e) {
+      get().pushToast("error", `Export failed: ${String(e)}`);
+    }
+  },
+
+  async importSettings() {
+    try {
+      const path = await openDialog({ multiple: false });
+      if (!path || typeof path !== "string") return;
+      const json = await importSettingsFile(path);
+      const incoming = JSON.parse(json) as Partial<Settings>;
+      const next = { ...DEFAULT_SETTINGS, ...get().settings, ...incoming };
+      applyTheme(next.theme);
+      set({ settings: next });
+      await saveSettings(next);
+      get().pushToast("success", "Settings imported.");
+    } catch (e) {
+      get().pushToast("error", `Import failed: ${String(e)}`);
+    }
+  },
 
   pushToast(kind, message) {
     const toast: Toast = { id: ++toastSeq, kind, message };

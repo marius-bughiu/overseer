@@ -248,6 +248,18 @@ pub async fn sftp_disconnect(state: tauri::State<'_, AppState>, id: String) -> R
     Ok(())
 }
 
+/// Export the given settings JSON to a file the user chose.
+#[tauri::command]
+pub fn export_settings(path: String, json: String) -> Result<()> {
+    std::fs::write(&path, json).map_err(|e| AppError::Io(e.to_string()))
+}
+
+/// Read a settings JSON file the user chose, returning its contents.
+#[tauri::command]
+pub fn import_settings(path: String) -> Result<String> {
+    std::fs::read_to_string(&path).map_err(|e| AppError::Io(e.to_string()))
+}
+
 /// Persist non-secret app settings (the secret vault is handled separately by
 /// the Stronghold plugin on the frontend).
 #[tauri::command]

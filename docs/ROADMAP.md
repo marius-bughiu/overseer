@@ -47,7 +47,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Folder / tree grouping
 - ⏳ Per-machine resolution / redirects / gateway in the profile
 - ⏳ Manual (non-Tailscale) hosts
-- ⏳ Import / export connections
+- ✅ Import / export connections &amp; settings (JSON file)
 
 ## 4. Connectivity
 
