@@ -15,8 +15,8 @@ const DEFAULT_PORT: Record<Protocol, number> = {
   ssh: 22,
 };
 
-/** RDP can't be embedded yet — it always opens in the external client. */
-const EMBEDDABLE: Protocol[] = ["vnc", "ssh"];
+/** All protocols can now render in an embedded, in-app tab. */
+const EMBEDDABLE: Protocol[] = ["rdp", "vnc", "ssh"];
 
 type Mode = "app" | "external";
 
@@ -222,12 +222,10 @@ export function ConnectDialog({
               <ExternalLink size={15} /> External
             </button>
           </div>
-          {!embeddable && (
-            <p className="mt-1.5 text-xs text-slate-500">
-              In-app RDP is coming soon. RDP opens in your system client for
-              now.
-            </p>
-          )}
+          <p className="mt-1.5 text-xs text-slate-500">
+            In app renders the session inside Overseer in a tab. External hands
+            it to your system client.
+          </p>
         </div>
 
         <div className="grid grid-cols-3 gap-2">

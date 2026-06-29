@@ -15,10 +15,10 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 
 ## 1. In-app, tabbed, embedded sessions (headline)
 
-- 🚧 Tabbed multi-session shell (open many sessions in one window)
-- 🚧 Embedded **SSH** terminal (xterm.js + russh backend)
-- 🚧 Embedded **VNC** viewer (noVNC + in-process WebSocket↔TCP bridge)
-- ⏳ Embedded **RDP** client (IronRDP, pure-Rust)
+- ✅ Tabbed multi-session shell (open many sessions in one window)
+- ✅ Embedded **SSH** terminal (xterm.js + russh backend)
+- ✅ Embedded **VNC** viewer (noVNC + in-process WebSocket↔TCP bridge)
+- ✅ Embedded **RDP** client (IronRDP, pure-Rust; canvas framebuffer + input)
 - ⏳ Live session thumbnails / overview grid
 - ⏳ Per-session reconnect & connection status
 - ⏳ Full-screen & detached-window sessions
@@ -30,7 +30,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 
 ## 2. Protocols
 
-- ✅ RDP (launch / external client)
+- ✅ RDP (launch / external client + embedded)
 - ✅ VNC (launch / external client + embedded)
 - ✅ SSH (launch + embedded)
 - ⏳ SFTP file browser

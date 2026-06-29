@@ -95,6 +95,22 @@ pub async fn open_ssh_session(
     session::open_ssh(host, port, username, password, cols, rows).await
 }
 
+/// Open an embedded **RDP** session bridge. Returns the loopback WebSocket URL
+/// the frontend's canvas renderer should connect to.
+#[allow(clippy::too_many_arguments)]
+#[tauri::command]
+pub async fn open_rdp_session(
+    host: String,
+    port: u16,
+    username: String,
+    password: String,
+    domain: Option<String>,
+    width: u16,
+    height: u16,
+) -> Result<String> {
+    session::open_rdp(host, port, username, password, domain, width, height).await
+}
+
 /// Send a Wake-on-LAN magic packet to wake a sleeping machine.
 #[tauri::command]
 pub async fn wake_on_lan(mac: String, broadcast: Option<String>) -> Result<()> {

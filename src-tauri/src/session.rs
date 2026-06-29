@@ -27,6 +27,7 @@ use tokio_tungstenite::tungstenite::http::StatusCode;
 use tokio_tungstenite::tungstenite::Message;
 
 use crate::error::{AppError, Result};
+use crate::rdp::{self, RdpInput, RdpParams};
 
 /// How long to wait for the frontend to connect to a freshly-opened bridge
 /// before giving up and freeing the port.
@@ -155,6 +156,116 @@ async fn bridge_ws_tcp(
     });
 
     let _ = tokio::join!(to_ws, to_tcp);
+}
+
+// ---------------------------------------------------------------------------
+// RDP: drive IronRDP on a thread, stream the framebuffer
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+#[serde(tag = "t")]
+enum WireInput {
+    #[serde(rename = "m")]
+    Move { x: u16, y: u16 },
+    #[serde(rename = "mb")]
+    Button { b: u8, down: bool },
+    #[serde(rename = "w")]
+    Wheel { v: bool, d: i16 },
+    #[serde(rename = "sc")]
+    Scancode { code: u16, down: bool },
+    #[serde(rename = "uc")]
+    Unicode { ch: char, down: bool },
+}
+
+impl From<WireInput> for RdpInput {
+    fn from(w: WireInput) -> Self {
+        match w {
+            WireInput::Move { x, y } => RdpInput::MouseMove { x, y },
+            WireInput::Button { b, down } => RdpInput::MouseButton { button: b, down },
+            WireInput::Wheel { v, d } => RdpInput::Wheel {
+                vertical: v,
+                delta: d,
+            },
+            WireInput::Scancode { code, down } => RdpInput::Scancode { code, down },
+            WireInput::Unicode { ch, down } => RdpInput::Unicode { ch, down },
+        }
+    }
+}
+
+/// Open an embedded RDP bridge. The framebuffer streams to the frontend canvas
+/// over the WebSocket (binary), and input events arrive as JSON text frames.
+#[allow(clippy::too_many_arguments)]
+pub async fn open_rdp(
+    host: String,
+    port: u16,
+    username: String,
+    password: String,
+    domain: Option<String>,
+    width: u16,
+    height: u16,
+) -> Result<String> {
+    if username.trim().is_empty() {
+        return Err(AppError::Session("RDP requires a username".into()));
+    }
+    let (listener, token, url) = bind_loopback().await?;
+    tokio::spawn(async move {
+        let Some(ws) = accept_ws(listener, token).await else {
+            return;
+        };
+        let (mut ws_tx, mut ws_rx) = ws.split();
+
+        // framebuffer: RDP thread -> WebSocket
+        let (fb_tx, mut fb_rx) = tokio::sync::mpsc::unbounded_channel::<Vec<u8>>();
+        // input: WebSocket -> RDP thread
+        let (in_tx, in_rx) = std::sync::mpsc::channel::<RdpInput>();
+
+        let params = RdpParams {
+            host,
+            port,
+            username,
+            password,
+            domain,
+            width: width.max(640),
+            height: height.max(480),
+        };
+
+        let fb_err = fb_tx.clone();
+        std::thread::spawn(move || {
+            if let Err(e) = rdp::run(params, fb_tx, in_rx) {
+                let mut frame = vec![0x03u8]; // error frame
+                frame.extend_from_slice(e.as_bytes());
+                let _ = fb_err.send(frame);
+            }
+        });
+
+        let to_ws = tokio::spawn(async move {
+            while let Some(frame) = fb_rx.recv().await {
+                if ws_tx.send(Message::Binary(frame)).await.is_err() {
+                    break;
+                }
+            }
+        });
+
+        let to_rdp = tokio::spawn(async move {
+            while let Some(Ok(msg)) = ws_rx.next().await {
+                match msg {
+                    Message::Text(t) => {
+                        if let Ok(w) = serde_json::from_str::<WireInput>(&t) {
+                            if in_tx.send(w.into()).is_err() {
+                                break;
+                            }
+                        }
+                    }
+                    Message::Close(_) => break,
+                    _ => {}
+                }
+            }
+        });
+
+        let _ = tokio::join!(to_ws, to_rdp);
+    });
+
+    Ok(url)
 }
 
 // ---------------------------------------------------------------------------

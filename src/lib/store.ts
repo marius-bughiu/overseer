@@ -4,6 +4,7 @@ import {
   discoverDevices,
   hostPlatform,
   loadSettings,
+  openRdpSession,
   openSshSession,
   openVncSession,
   saveSettings,
@@ -232,6 +233,15 @@ export const useStore = create<AppStore>((set, get) => ({
           password: args.password ?? "",
           cols: 80,
           rows: 24,
+        });
+      } else if (args.protocol === "rdp") {
+        wsUrl = await openRdpSession({
+          host: args.host,
+          port: args.port,
+          username: args.username ?? "",
+          password: args.password ?? "",
+          width: 1280,
+          height: 800,
         });
       } else {
         throw new Error(`${args.protocol} cannot be embedded yet`);

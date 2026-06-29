@@ -3,6 +3,7 @@ import { Loader2, RefreshCw, X } from "lucide-react";
 
 import { useStore } from "../lib/store";
 import type { SessionStatus, SessionTab } from "../lib/types";
+import { RdpViewer } from "./RdpViewer";
 import { SshTerminal } from "./SshTerminal";
 import { VncViewer } from "./VncViewer";
 
@@ -89,6 +90,8 @@ export function SessionHost({ session }: { session: SessionTab }) {
           </div>
         ) : session.protocol === "ssh" ? (
           <SshTerminal wsUrl={session.wsUrl} onStatus={onStatus} />
+        ) : session.protocol === "rdp" ? (
+          <RdpViewer wsUrl={session.wsUrl} onStatus={onStatus} />
         ) : (
           <VncViewer
             wsUrl={session.wsUrl}

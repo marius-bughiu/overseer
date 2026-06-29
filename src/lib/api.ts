@@ -42,6 +42,22 @@ export function openSshSession(args: {
   return invoke<string>("open_ssh_session", args);
 }
 
+/** Open an embedded RDP bridge; returns the loopback WebSocket URL for canvas. */
+export function openRdpSession(args: {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  domain?: string | null;
+  width: number;
+  height: number;
+}): Promise<string> {
+  return invoke<string>("open_rdp_session", {
+    ...args,
+    domain: args.domain ?? null,
+  });
+}
+
 /** Send a Wake-on-LAN magic packet. */
 export function wakeOnLan(
   mac: string,

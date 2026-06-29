@@ -44,6 +44,24 @@ futures-util = "0.3"
 russh = "0.54"
 rand = "0.8"
 
+# Pure-Rust RDP client for the embedded, in-app RDP session.
+ironrdp = { version = "0.14", features = [
+    "connector",
+    "session",
+    "graphics",
+    "input",
+    "svc",
+    "dvc",
+    "displaycontrol",
+    "pdu",
+] }
+ironrdp-tls = { version = "0.2", features = ["rustls"] }
+ironrdp-blocking = "0.8"
+sspi = { version = "0.18", features = ["network_client"] }
+tokio-rustls = "0.26"
+x509-cert = "0.2"
+bytes = "1"
+
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
 
