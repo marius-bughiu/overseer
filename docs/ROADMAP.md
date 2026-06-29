@@ -41,7 +41,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ SFTP file browser
 - ✅ Telnet (embedded, IAC negotiation handled server-side)
 - ⏳ SPICE
-- ⏳ Web/HTTP(S) console tabs
+- ✅ Web/HTTP(S) console — opens a device's web admin UI in an in-app
+  webview window (keeps the main window's CSP strict)
 - ⏳ RDP Gateway support
 
 ## 3. Connection organization

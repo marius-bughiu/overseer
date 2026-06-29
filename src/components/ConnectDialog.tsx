@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import {
   ExternalLink,
   FolderOpen,
+  Globe,
   Loader2,
   MonitorPlay,
   Power,
@@ -10,6 +11,7 @@ import {
 
 import { launchConnection, portScan } from "../lib/api";
 import { primaryAddress } from "../lib/devices";
+import { buildWebUrl, openWebConsole } from "../lib/web";
 import { useStore } from "../lib/store";
 import type { Device, Protocol } from "../lib/types";
 import { vault } from "../lib/vault";
@@ -191,6 +193,15 @@ export function ConnectDialog({
     void doConnect();
   }
 
+  async function openWeb() {
+    try {
+      await openWebConsole(device.name, buildWebUrl(host, port));
+      onClose();
+    } catch (err) {
+      pushToast("error", `Could not open web console: ${String(err)}`);
+    }
+  }
+
   async function browseFiles() {
     setBusy(true);
     try {
@@ -233,6 +244,14 @@ export function ConnectDialog({
         <>
           <button className="btn-ghost" onClick={onClose} disabled={busy}>
             Cancel
+          </button>
+          <button
+            className="btn-ghost"
+            onClick={() => void openWeb()}
+            disabled={busy}
+            title="Open the device's web console in an in-app window"
+          >
+            <Globe size={15} /> Web
           </button>
           {protocol === "ssh" && (
             <button
