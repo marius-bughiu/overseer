@@ -15,15 +15,25 @@ use tokio::sync::Mutex;
 
 use crate::error::{AppError, Result};
 
-struct SshClient;
+struct SshClient {
+    host: String,
+    known_hosts: std::path::PathBuf,
+}
 
 impl russh::client::Handler for SshClient {
     type Error = russh::Error;
     async fn check_server_key(
         &mut self,
-        _server_public_key: &russh::keys::ssh_key::PublicKey,
+        server_public_key: &russh::keys::ssh_key::PublicKey,
     ) -> std::result::Result<bool, Self::Error> {
-        Ok(true)
+        let fingerprint = server_public_key
+            .fingerprint(Default::default())
+            .to_string();
+        Ok(crate::trust::verify(
+            &self.known_hosts,
+            &self.host,
+            &fingerprint,
+        ))
     }
 }
 
@@ -64,12 +74,17 @@ impl Registry {
         port: u16,
         username: &str,
         password: String,
+        known_hosts: std::path::PathBuf,
     ) -> Result<String> {
         if username.trim().is_empty() {
             return Err(AppError::Session("SFTP requires a username".into()));
         }
         let config = Arc::new(russh::client::Config::default());
-        let mut handle = russh::client::connect(config, (host, port), SshClient)
+        let client = SshClient {
+            host: host.to_string(),
+            known_hosts,
+        };
+        let mut handle = russh::client::connect(config, (host, port), client)
             .await
             .map_err(|e| AppError::Session(format!("SSH connect failed: {e}")))?;
 

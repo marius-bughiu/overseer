@@ -71,6 +71,11 @@ export function tcpPing(host: string, port: number): Promise<number | null> {
   return invoke("tcp_ping", { host, port });
 }
 
+/** Forget all trusted SSH host keys (TOFU reset). */
+export function resetKnownHosts(): Promise<void> {
+  return invoke("reset_known_hosts");
+}
+
 // --- SFTP file transfer ---
 
 export interface SftpFile {

@@ -272,23 +272,34 @@ pub async fn open_rdp(
 // SSH: terminate the protocol here, stream the terminal
 // ---------------------------------------------------------------------------
 
-struct SshClient;
+struct SshClient {
+    host: String,
+    known_hosts: std::path::PathBuf,
+}
 
 impl russh::client::Handler for SshClient {
     type Error = russh::Error;
 
-    // Host-key trust store is on the roadmap; for now accept and proceed.
+    // Trust-on-first-use host-key verification.
     async fn check_server_key(
         &mut self,
-        _server_public_key: &russh::keys::ssh_key::PublicKey,
+        server_public_key: &russh::keys::ssh_key::PublicKey,
     ) -> std::result::Result<bool, Self::Error> {
-        Ok(true)
+        let fingerprint = server_public_key
+            .fingerprint(Default::default())
+            .to_string();
+        Ok(crate::trust::verify(
+            &self.known_hosts,
+            &self.host,
+            &fingerprint,
+        ))
     }
 }
 
 /// Open an SSH bridge to `host:port`, authenticating with `username`/`password`
 /// and requesting a PTY of the given size. Returns the loopback WebSocket URL
 /// the frontend (xterm.js) should connect to.
+#[allow(clippy::too_many_arguments)]
 pub async fn open_ssh(
     host: String,
     port: u16,
@@ -296,6 +307,7 @@ pub async fn open_ssh(
     password: String,
     cols: u32,
     rows: u32,
+    known_hosts: std::path::PathBuf,
 ) -> Result<String> {
     if username.trim().is_empty() {
         return Err(AppError::Session("SSH requires a username".into()));
@@ -309,18 +321,21 @@ pub async fn open_ssh(
 
         // Connect + authenticate; surface failures to the terminal.
         let config = Arc::new(russh::client::Config::default());
-        let mut handle =
-            match russh::client::connect(config, (host.as_str(), port), SshClient).await {
-                Ok(h) => h,
-                Err(e) => {
-                    let _ = ws_tx
-                        .send(Message::Text(format!(
-                            "\r\n[overseer] connection failed: {e}\r\n"
-                        )))
-                        .await;
-                    return;
-                }
-            };
+        let client = SshClient {
+            host: host.clone(),
+            known_hosts,
+        };
+        let mut handle = match russh::client::connect(config, (host.as_str(), port), client).await {
+            Ok(h) => h,
+            Err(e) => {
+                let _ = ws_tx
+                    .send(Message::Text(format!(
+                        "\r\n[overseer] connection failed: {e}\r\n"
+                    )))
+                    .await;
+                return;
+            }
+        };
         match handle.authenticate_password(&username, password).await {
             Ok(res) if res.success() => {}
             _ => {

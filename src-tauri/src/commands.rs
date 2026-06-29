@@ -83,8 +83,10 @@ pub async fn open_vnc_session(host: String, port: u16) -> Result<String> {
 
 /// Open an embedded **SSH** session bridge. Returns the loopback WebSocket URL
 /// the frontend's xterm.js terminal should connect to.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn open_ssh_session(
+    state: tauri::State<'_, AppState>,
     host: String,
     port: u16,
     username: String,
@@ -92,7 +94,8 @@ pub async fn open_ssh_session(
     cols: u32,
     rows: u32,
 ) -> Result<String> {
-    session::open_ssh(host, port, username, password, cols, rows).await
+    let known_hosts = state.known_hosts();
+    session::open_ssh(host, port, username, password, cols, rows, known_hosts).await
 }
 
 /// Open an embedded **RDP** session bridge. Returns the loopback WebSocket URL
@@ -158,7 +161,18 @@ pub async fn sftp_connect(
     username: String,
     password: String,
 ) -> Result<String> {
-    state.sftp.connect(&host, port, &username, password).await
+    let known_hosts = state.known_hosts();
+    state
+        .sftp
+        .connect(&host, port, &username, password, known_hosts)
+        .await
+}
+
+/// Forget all trusted SSH host keys (after a legitimate server key rotation).
+#[tauri::command]
+pub fn reset_known_hosts(state: tauri::State<'_, AppState>) -> Result<()> {
+    crate::trust::reset(&state.known_hosts());
+    Ok(())
 }
 
 /// List a remote directory.

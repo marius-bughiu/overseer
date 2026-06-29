@@ -10,6 +10,7 @@ import {
 
 import { openUrl } from "@tauri-apps/plugin-opener";
 
+import { resetKnownHosts } from "../lib/api";
 import { relativeTime } from "../lib/devices";
 import { useStore } from "../lib/store";
 import type { DiscoveryMethod } from "../lib/types";
@@ -187,6 +188,25 @@ export function Settings() {
             <option value={30}>30 minutes</option>
             <option value={60}>1 hour</option>
           </select>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between rounded-lg border border-ink-700 bg-ink-800 px-4 py-3">
+          <span className="text-sm text-slate-300">
+            Trusted SSH host keys
+            <span className="ml-1 block text-xs text-slate-500">
+              Reset after a legitimate server key rotation.
+            </span>
+          </span>
+          <button
+            className="btn-ghost"
+            onClick={() => {
+              void resetKnownHosts().then(() =>
+                pushToast("info", "Trusted host keys cleared."),
+              );
+            }}
+          >
+            Reset
+          </button>
         </div>
       </section>
 

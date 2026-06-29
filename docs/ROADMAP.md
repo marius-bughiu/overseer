@@ -65,7 +65,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ⏳ Credential injection into embedded sessions (no manual typing)
 - ⏳ External password-manager import (KeePass / Bitwarden / 1Password)
 - ⏳ SSH key management & agent
-- ⏳ Host-key verification & trust store
+- ✅ Host-key verification & trust store (TOFU known-hosts + reset)
 - ✅ TOTP / 2FA secret storage (vault-stored, live codes)
 
 ## 6. Experience & platform

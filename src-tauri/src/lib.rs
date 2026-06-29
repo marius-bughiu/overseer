@@ -12,6 +12,7 @@ mod launcher;
 mod rdp;
 mod session;
 mod sftp;
+mod trust;
 mod wol;
 
 use std::path::PathBuf;
@@ -25,6 +26,7 @@ use tauri::Manager;
 /// the registry of open SFTP sessions.
 pub struct AppState {
     settings_path: Mutex<Option<PathBuf>>,
+    known_hosts_path: Mutex<Option<PathBuf>>,
     pub sftp: sftp::Registry,
 }
 
@@ -32,6 +34,7 @@ impl AppState {
     fn new() -> Self {
         Self {
             settings_path: Mutex::new(None),
+            known_hosts_path: Mutex::new(None),
             sftp: sftp::Registry::default(),
         }
     }
@@ -42,6 +45,15 @@ impl AppState {
             .map_err(|_| AppError::Other("settings state poisoned".into()))?
             .clone()
             .ok_or_else(|| AppError::Other("settings path not initialized".into()))
+    }
+
+    /// Path to the TOFU known-hosts file.
+    pub fn known_hosts(&self) -> PathBuf {
+        self.known_hosts_path
+            .lock()
+            .ok()
+            .and_then(|g| g.clone())
+            .unwrap_or_else(|| std::env::temp_dir().join("overseer-known_hosts.json"))
     }
 
     fn write_settings(&self, json: &str) -> Result<()> {
@@ -98,14 +110,11 @@ pub fn run() {
             app.handle()
                 .plugin(tauri_plugin_stronghold::Builder::with_argon2(&salt_path).build())?;
 
-            // Resolve where non-secret settings are persisted.
-            let settings_path = app
-                .path()
-                .app_config_dir()
-                .expect("no config dir")
-                .join("settings.json");
+            // Resolve where non-secret settings + the known-hosts file live.
+            let config_dir = app.path().app_config_dir().expect("no config dir");
             if let Some(state) = app.try_state::<AppState>() {
-                *state.settings_path.lock().unwrap() = Some(settings_path);
+                *state.settings_path.lock().unwrap() = Some(config_dir.join("settings.json"));
+                *state.known_hosts_path.lock().unwrap() = Some(config_dir.join("known_hosts.json"));
             }
 
             Ok(())
@@ -128,6 +137,7 @@ pub fn run() {
             commands::sftp_remove,
             commands::sftp_rename,
             commands::sftp_disconnect,
+            commands::reset_known_hosts,
             commands::host_platform,
             commands::save_settings,
             commands::load_settings,
