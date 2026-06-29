@@ -53,6 +53,7 @@ ironrdp = { version = "0.14", features = [
     "svc",
     "dvc",
     "displaycontrol",
+    "cliprdr",
     "pdu",
 ] }
 ironrdp-tls = { version = "0.2", features = ["rustls"] }
@@ -65,6 +66,8 @@ russh-sftp = "2.3.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
+# OS clipboard access for RDP clipboard redirection (cliprdr). Desktop-only.
+arboard = "3"
 
 # Biometric authentication (Touch ID / Face ID / Android biometric) is a
 # mobile-only plugin; it is never compiled into desktop builds.

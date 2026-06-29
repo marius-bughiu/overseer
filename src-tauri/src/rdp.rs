@@ -18,6 +18,12 @@ use std::net::TcpStream;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
+use ironrdp::cliprdr::backend::{ClipboardMessage, CliprdrBackend};
+use ironrdp::cliprdr::pdu::{
+    ClipboardFormat, ClipboardFormatId, ClipboardGeneralCapabilityFlags, FileContentsRequest,
+    FileContentsResponse, FormatDataRequest, FormatDataResponse, LockDataId,
+};
+use ironrdp::cliprdr::CliprdrClient;
 use ironrdp::connector::{self, ConnectionResult, Credentials};
 use ironrdp::graphics::image_processing::PixelFormat;
 use ironrdp::input::{Database, MouseButton, MousePosition, Operation, Scancode, WheelRotations};
@@ -53,6 +59,149 @@ pub struct RdpParams {
 const FRAME_RESIZE: u8 = 0x01;
 const FRAME_IMAGE: u8 = 0x02;
 
+// ---- Clipboard redirection (CLIPRDR) ---------------------------------------
+//
+// IronRDP's `Cliprdr` static channel drives the protocol; we supply a backend
+// that bridges it to the OS clipboard (text only). The backend runs on the RDP
+// thread and posts [`ClipboardMessage`]s through a channel; the active loop
+// turns those into PDUs via the registered `CliprdrClient` and writes them.
+//
+// Text moves both ways: remote paste pulls the local clipboard
+// (`on_format_data_request`), and a remote copy pushes into the local clipboard
+// (`on_remote_copy` → `on_format_data_response`). The OS clipboard itself is
+// only reachable on desktop, so those helpers are no-ops on mobile.
+
+/// Read the OS clipboard as text (desktop only).
+#[cfg(desktop)]
+fn read_clipboard_text() -> Option<String> {
+    arboard::Clipboard::new().ok()?.get_text().ok()
+}
+
+#[cfg(not(desktop))]
+fn read_clipboard_text() -> Option<String> {
+    None
+}
+
+/// Write text to the OS clipboard (desktop only).
+#[cfg(desktop)]
+fn write_clipboard_text(text: &str) {
+    if let Ok(mut clipboard) = arboard::Clipboard::new() {
+        let _ = clipboard.set_text(text.to_owned());
+    }
+}
+
+#[cfg(not(desktop))]
+fn write_clipboard_text(_text: &str) {}
+
+/// Bridges IronRDP's clipboard channel to the local OS clipboard.
+#[derive(Debug)]
+struct OverseerCliprdr {
+    proxy: std::sync::mpsc::Sender<ClipboardMessage>,
+    temp_dir: String,
+}
+
+impl OverseerCliprdr {
+    fn new(proxy: std::sync::mpsc::Sender<ClipboardMessage>) -> Self {
+        let temp_dir = std::env::temp_dir().to_string_lossy().into_owned();
+        Self { proxy, temp_dir }
+    }
+
+    fn post(&self, msg: ClipboardMessage) {
+        let _ = self.proxy.send(msg);
+    }
+}
+
+ironrdp::core::impl_as_any!(OverseerCliprdr);
+
+impl CliprdrBackend for OverseerCliprdr {
+    fn temporary_directory(&self) -> &str {
+        &self.temp_dir
+    }
+
+    fn client_capabilities(&self) -> ClipboardGeneralCapabilityFlags {
+        ClipboardGeneralCapabilityFlags::empty()
+    }
+
+    fn on_ready(&mut self) {}
+
+    fn on_request_format_list(&mut self) {
+        // Advertise that we can serve Unicode text from the local clipboard.
+        self.post(ClipboardMessage::SendInitiateCopy(vec![
+            ClipboardFormat::new(ClipboardFormatId::CF_UNICODETEXT),
+        ]));
+    }
+
+    fn on_process_negotiated_capabilities(&mut self, _caps: ClipboardGeneralCapabilityFlags) {}
+
+    fn on_remote_copy(&mut self, available_formats: &[ClipboardFormat]) {
+        // The remote copied something; if it has text, request it for the local
+        // clipboard.
+        if available_formats
+            .iter()
+            .any(|f| f.id() == ClipboardFormatId::CF_UNICODETEXT)
+        {
+            self.post(ClipboardMessage::SendInitiatePaste(
+                ClipboardFormatId::CF_UNICODETEXT,
+            ));
+        }
+    }
+
+    fn on_format_data_request(&mut self, _request: FormatDataRequest) {
+        // The remote is pasting; hand it the current local clipboard text.
+        let response = match read_clipboard_text() {
+            Some(text) => FormatDataResponse::new_unicode_string(&text),
+            None => FormatDataResponse::new_error(),
+        };
+        self.post(ClipboardMessage::SendFormatData(response));
+    }
+
+    fn on_format_data_response(&mut self, response: FormatDataResponse<'_>) {
+        // The remote sent its clipboard text; mirror it locally.
+        if !response.is_error() {
+            if let Ok(text) = response.to_unicode_string() {
+                write_clipboard_text(&text);
+            }
+        }
+    }
+
+    fn on_file_contents_request(&mut self, _request: FileContentsRequest) {}
+    fn on_file_contents_response(&mut self, _response: FileContentsResponse<'_>) {}
+    fn on_lock(&mut self, _data_id: LockDataId) {}
+    fn on_unlock(&mut self, _data_id: LockDataId) {}
+}
+
+/// Turn pending clipboard backend events into CLIPRDR PDUs and write them.
+fn drain_clipboard(
+    clip_rx: &Receiver<ClipboardMessage>,
+    active_stage: &mut ActiveStage,
+    framed: &mut UpgradedFramed,
+) -> Result<(), String> {
+    while let Ok(msg) = clip_rx.try_recv() {
+        // Each message is converted by the registered CLIPRDR processor; scope
+        // the borrow so we can then encode the produced messages.
+        let messages = {
+            let Some(cliprdr) = active_stage.get_svc_processor_mut::<CliprdrClient>() else {
+                continue;
+            };
+            let result = match msg {
+                ClipboardMessage::SendInitiateCopy(formats) => cliprdr.initiate_copy(&formats),
+                ClipboardMessage::SendFormatData(response) => cliprdr.submit_format_data(response),
+                ClipboardMessage::SendInitiatePaste(format) => cliprdr.initiate_paste(format),
+                ClipboardMessage::Error(_) => continue,
+            };
+            match result {
+                Ok(messages) => messages,
+                Err(_) => continue,
+            }
+        };
+        let bytes = active_stage
+            .process_svc_processor_messages(messages)
+            .map_err(|e| e.to_string())?;
+        framed.write_all(&bytes).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 /// Run the blocking RDP client to completion. Intended to be spawned on a
 /// dedicated thread. `fb_tx` receives framebuffer frames; `input_rx` supplies
 /// input events. Returns an error string on failure (surfaced to the UI).
@@ -62,8 +211,10 @@ pub fn run(
     input_rx: Receiver<RdpInput>,
 ) -> Result<(), String> {
     let config = build_config(&params);
+    // The CLIPRDR backend posts clipboard events here; the loop drains them.
+    let (clip_tx, clip_rx) = std::sync::mpsc::channel::<ClipboardMessage>();
     let (connection_result, mut framed) =
-        connect(config, params.host.clone(), params.port).map_err(|e| e.to_string())?;
+        connect(config, params.host.clone(), params.port, clip_tx).map_err(|e| e.to_string())?;
 
     let mut image = DecodedImage::new(
         PixelFormat::RgbA32,
@@ -123,6 +274,8 @@ pub fn run(
         if write_outputs(&mut framed, outputs, &mut image, &fb_tx)? {
             return Ok(());
         }
+        // Flush any clipboard PDUs the channel produced while processing.
+        drain_clipboard(&clip_rx, &mut active_stage, &mut framed)?;
     }
 }
 
@@ -295,6 +448,7 @@ fn connect(
     config: connector::Config,
     server_name: String,
     port: u16,
+    clip_tx: std::sync::mpsc::Sender<ClipboardMessage>,
 ) -> Result<(ConnectionResult, UpgradedFramed), Box<dyn std::error::Error>> {
     use std::net::ToSocketAddrs as _;
     let server_addr = (server_name.as_str(), port)
@@ -308,7 +462,10 @@ fn connect(
     let client_addr = tcp_stream.local_addr()?;
 
     let mut framed = ironrdp_blocking::Framed::new(tcp_stream);
-    let mut connector = connector::ClientConnector::new(config, client_addr);
+    // Register the CLIPRDR (clipboard) static channel so it is negotiated.
+    let cliprdr = CliprdrClient::new(Box::new(OverseerCliprdr::new(clip_tx)));
+    let mut connector =
+        connector::ClientConnector::new(config, client_addr).with_static_channel(cliprdr);
 
     let should_upgrade = ironrdp_blocking::connect_begin(&mut framed, &mut connector)?;
 

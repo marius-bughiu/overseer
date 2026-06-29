@@ -12,9 +12,9 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 The headline experience and the great majority of planned features are
 **implemented and merged**. What remains are a handful of items that each need
 substantial protocol-client or native-platform work — SPICE, RDP Gateway,
-RDP multi-monitor, RDP device redirection (drives/printers/audio), and desktop
-biometrics (Windows Hello). These are intentionally left as tracked future
-milestones
+RDP multi-monitor, RDP device redirection beyond the clipboard
+(drives/printers/audio), and desktop biometrics (Windows Hello). These are
+intentionally left as tracked future milestones
 rather than shipped half-done. Team/enterprise items are out of scope by
 choice (and must never add telemetry).
 
@@ -37,8 +37,9 @@ choice (and must never add telemetry).
 - ✅ RDP resolution selection + scale-to-fit rendering (⏳ multi-monitor —
   needs IronRDP multi-mon support)
 - ✅ Clipboard redirection — paste the local clipboard into SSH / Telnet / VNC
-  sessions (⏳ drives, printers, audio — need IronRDP virtual channels:
-  rdpdr / rdpsnd)
+  sessions; RDP bidirectional text clipboard via the CLIPRDR virtual channel
+  (experimental, pending validation against a live Windows host)
+  (⏳ drives, printers, audio — need IronRDP rdpdr / rdpsnd)
 - ✅ In-session file transfer — SFTP browser (upload/download/mkdir/delete) for
   SSH hosts (RDP drive redirect still planned)
 - ✅ Session recording — terminal sessions captured to an asciicast v2
