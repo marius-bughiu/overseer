@@ -103,6 +103,30 @@ export function importSettingsFile(path: string): Promise<string> {
   return invoke("import_settings", { path });
 }
 
+/** Supported password-manager export formats. */
+export type CredentialFormat =
+  "auto" | "bitwarden" | "keepass" | "onePassword" | "csv";
+
+/** A credential parsed from a password-manager export. */
+export interface ImportedEntry {
+  name: string;
+  host: string | null;
+  username: string;
+  password: string;
+}
+
+/**
+ * Parse a password-manager export file into credential entries. The plaintext
+ * is read in the backend and returned here; the caller stores secrets only in
+ * the encrypted vault.
+ */
+export function importCredentialsFile(
+  path: string,
+  format: CredentialFormat = "auto",
+): Promise<ImportedEntry[]> {
+  return invoke("import_credentials", { path, format });
+}
+
 // --- SFTP file transfer ---
 
 export interface SftpFile {

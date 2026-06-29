@@ -1,6 +1,8 @@
 //! Tauri command handlers exposed to the frontend via `invoke()`.
 
-use overseer_core::{ConnectionRequest, Device, Protocol};
+use overseer_core::{
+    parse_export, ConnectionRequest, CredentialFormat, Device, ImportedEntry, Protocol,
+};
 use serde::Deserialize;
 
 use crate::error::{AppError, Result};
@@ -309,6 +311,16 @@ pub fn export_settings(path: String, json: String) -> Result<()> {
 #[tauri::command]
 pub fn import_settings(path: String) -> Result<String> {
     std::fs::read_to_string(&path).map_err(|e| AppError::Io(e.to_string()))
+}
+
+/// Parse a password-manager export file (Bitwarden JSON, KeePass / 1Password /
+/// generic CSV) into a list of credential entries. The plaintext export is read
+/// into memory only and handed back to the UI, which writes the secrets into the
+/// encrypted vault — this command persists nothing to disk.
+#[tauri::command]
+pub fn import_credentials(path: String, format: CredentialFormat) -> Result<Vec<ImportedEntry>> {
+    let contents = std::fs::read_to_string(&path).map_err(|e| AppError::Io(e.to_string()))?;
+    Ok(parse_export(&contents, format)?)
 }
 
 /// Persist non-secret app settings (the secret vault is handled separately by

@@ -143,6 +143,7 @@ pub fn run() {
             commands::reset_known_hosts,
             commands::export_settings,
             commands::import_settings,
+            commands::import_credentials,
             commands::host_platform,
             commands::save_settings,
             commands::load_settings,

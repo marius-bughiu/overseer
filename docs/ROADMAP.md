@@ -64,7 +64,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Auto-lock on idle
 - ⏳ Biometric unlock (Touch ID / Windows Hello / Android biometric)
 - ✅ Credential injection into embedded sessions (password / key passed directly)
-- ⏳ External password-manager import (KeePass / Bitwarden / 1Password)
+- ✅ External password-manager import (Bitwarden JSON · KeePass / 1Password /
+  generic CSV → manual hosts + vault credentials)
 - ✅ SSH public-key auth (key file + passphrase); agent forwarding planned
 - ✅ Host-key verification & trust store (TOFU known-hosts + reset)
 - ✅ TOTP / 2FA secret storage (vault-stored, live codes)

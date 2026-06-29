@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   CheckCircle2,
   ExternalLink,
+  KeyRound,
   Lock,
   LockOpen,
   Terminal,
@@ -32,6 +33,7 @@ export function Settings() {
   const history = useStore((s) => s.settings.history);
   const exportSettings = useStore((s) => s.exportSettings);
   const importSettings = useStore((s) => s.importSettings);
+  const importCredentials = useStore((s) => s.importCredentials);
 
   const [gateOpen, setGateOpen] = useState(false);
   const isMobile = platform === "android" || platform === "ios";
@@ -269,6 +271,32 @@ export function Settings() {
           <button className="btn-ghost" onClick={() => void importSettings()}>
             Import settings
           </button>
+        </div>
+      </section>
+
+      <section className="card p-5">
+        <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-slate-100">
+          <KeyRound size={15} /> Import credentials
+        </h2>
+        <p className="mt-1 text-sm text-slate-400">
+          Bring in logins from a password manager. Each entry with a host
+          becomes a manual machine and its username/password is stored in the
+          encrypted vault. Supported exports: Bitwarden (JSON), KeePass /
+          1Password / generic (CSV).
+        </p>
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            className="btn-ghost"
+            disabled={!vaultUnlocked}
+            onClick={() => void importCredentials()}
+          >
+            Import from file…
+          </button>
+          {!vaultUnlocked && (
+            <span className="text-xs text-amber-400">
+              Unlock the vault first.
+            </span>
+          )}
         </div>
       </section>
 

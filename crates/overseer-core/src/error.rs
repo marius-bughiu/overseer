@@ -22,6 +22,11 @@ pub enum CoreError {
     /// A MAC address could not be parsed for Wake-on-LAN.
     #[error("invalid MAC address: {0}")]
     InvalidMac(String),
+
+    /// A password-manager export could not be parsed (wrong format / no
+    /// recognizable columns).
+    #[error("could not parse credential export: {0}")]
+    Import(String),
 }
 
 /// Convenience alias used throughout the core crate.

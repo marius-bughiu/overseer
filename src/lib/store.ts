@@ -9,6 +9,7 @@ import {
   discoverDevices,
   exportSettingsFile,
   hostPlatform,
+  importCredentialsFile,
   importSettingsFile,
   loadSettings,
   openRdpSession,
@@ -25,6 +26,7 @@ import {
   DEFAULT_SETTINGS,
   type ConnectionProfile,
   type Device,
+  type ManualHost,
   type Protocol,
   type SessionTab,
   type Settings,
@@ -34,6 +36,29 @@ import {
 /** Apply the theme by toggling the root `light` class (see index.css). */
 export function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("light", theme === "light");
+}
+
+/**
+ * Reduce a URL-ish credential field (`ssh://user@host:22/path`, `https://nas`,
+ * or a bare `10.0.0.5`) to a bare hostname/address suitable for a manual host.
+ * Returns null if nothing usable remains.
+ */
+function normalizeHost(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  let host = raw.trim();
+  if (!host) return null;
+  host = host.replace(/^[a-z][a-z0-9+.-]*:\/\//i, ""); // strip scheme://
+  host = host.split("/")[0]; // drop any path/query
+  const at = host.lastIndexOf("@");
+  if (at >= 0) host = host.slice(at + 1); // drop user@
+  if (host.startsWith("[")) {
+    // Bracketed IPv6 literal, optionally with :port — keep the address.
+    const end = host.indexOf("]");
+    if (end > 0) return host.slice(1, end) || null;
+  }
+  host = host.replace(/:\d+$/, ""); // drop :port (IPv4 / hostname)
+  host = host.trim();
+  return host || null;
 }
 
 /** Open the backend bridge for an embedded (screen) protocol; returns ws URL. */
@@ -135,6 +160,7 @@ interface AppStore {
   setPaletteOpen: (open: boolean) => void;
   exportSettings: () => Promise<void>;
   importSettings: () => Promise<void>;
+  importCredentials: () => Promise<void>;
   pushToast: (kind: Toast["kind"], message: string) => void;
   dismissToast: (id: number) => void;
 
@@ -285,6 +311,62 @@ export const useStore = create<AppStore>((set, get) => ({
       get().pushToast("success", "Settings imported.");
     } catch (e) {
       get().pushToast("error", `Import failed: ${String(e)}`);
+    }
+  },
+
+  async importCredentials() {
+    if (!get().vaultUnlocked) {
+      get().pushToast(
+        "error",
+        "Unlock the vault before importing credentials.",
+      );
+      return;
+    }
+    try {
+      const path = await openDialog({
+        multiple: false,
+        filters: [
+          { name: "Password export", extensions: ["json", "csv"] },
+          { name: "All files", extensions: ["*"] },
+        ],
+      });
+      if (!path || typeof path !== "string") return;
+
+      const entries = await importCredentialsFile(path, "auto");
+      const hosts: ManualHost[] = [];
+      let imported = 0;
+      let skipped = 0;
+
+      for (const entry of entries) {
+        const host = normalizeHost(entry.host);
+        if (!host) {
+          // Without a host we have nothing to connect to; skip credential-only
+          // entries rather than create unusable hosts.
+          skipped += 1;
+          continue;
+        }
+        const id = crypto.randomUUID();
+        hosts.push({ id, name: entry.name || host, host });
+        await vault.setCredential(`manual-${id}`, {
+          username: entry.username,
+          password: entry.password,
+        });
+        imported += 1;
+      }
+
+      if (hosts.length > 0) {
+        await get().updateSettings({
+          manualHosts: [...get().settings.manualHosts, ...hosts],
+        });
+      }
+
+      const note = skipped > 0 ? ` (${skipped} without a host skipped)` : "";
+      get().pushToast(
+        imported > 0 ? "success" : "info",
+        `Imported ${imported} credential${imported === 1 ? "" : "s"}${note}.`,
+      );
+    } catch (e) {
+      get().pushToast("error", `Credential import failed: ${String(e)}`);
     }
   },
 
