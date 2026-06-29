@@ -1,11 +1,14 @@
 import { useState } from "react";
 import {
   CheckCircle2,
+  ClipboardList,
   ExternalLink,
   KeyRound,
   Lock,
   LockOpen,
+  Plus,
   Terminal,
+  Trash2,
   XCircle,
 } from "lucide-react";
 
@@ -300,6 +303,8 @@ export function Settings() {
         </div>
       </section>
 
+      <SnippetsSection />
+
       {vaultUnlocked && <TotpPanel />}
 
       {history.length > 0 && (
@@ -330,6 +335,80 @@ export function Settings() {
 
       {gateOpen && <VaultGate onClose={() => setGateOpen(false)} />}
     </div>
+  );
+}
+
+function SnippetsSection() {
+  const snippets = useStore((s) => s.settings.snippets);
+  const addSnippet = useStore((s) => s.addSnippet);
+  const removeSnippet = useStore((s) => s.removeSnippet);
+
+  const [label, setLabel] = useState("");
+  const [text, setText] = useState("");
+
+  function add() {
+    if (!text.trim()) return;
+    void addSnippet(label || text.trim().split("\n")[0], text);
+    setLabel("");
+    setText("");
+  }
+
+  return (
+    <section className="card p-5">
+      <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-slate-100">
+        <ClipboardList size={15} /> Command snippets
+      </h2>
+      <p className="mt-1 text-sm text-slate-400">
+        Reusable commands you can paste as keystrokes into an SSH or Telnet
+        session from the snippet button in its toolbar.
+      </p>
+
+      {snippets.length > 0 && (
+        <ul className="mt-3 divide-y divide-ink-800">
+          {snippets.map((sn) => (
+            <li
+              key={sn.id}
+              className="flex items-start justify-between gap-3 py-2"
+            >
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-slate-200">
+                  {sn.label}
+                </div>
+                <pre className="mt-0.5 truncate font-mono text-xs text-slate-500">
+                  {sn.text}
+                </pre>
+              </div>
+              <button
+                className="btn-subtle p-1.5 text-slate-400 hover:text-red-300"
+                onClick={() => void removeSnippet(sn.id)}
+                aria-label="Delete snippet"
+              >
+                <Trash2 size={14} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-4 space-y-2">
+        <input
+          className="input"
+          placeholder="Label (e.g. Tail nginx log)"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
+        <textarea
+          className="input font-mono"
+          rows={2}
+          placeholder="Command text, e.g. sudo journalctl -u nginx -f"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <button className="btn-ghost" disabled={!text.trim()} onClick={add}>
+          <Plus size={15} /> Add snippet
+        </button>
+      </div>
+    </section>
   );
 }
 

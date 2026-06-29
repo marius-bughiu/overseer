@@ -180,6 +180,8 @@ interface AppStore {
   wake: (deviceId: string, mac: string, broadcast?: string) => Promise<void>;
   addManualHost: (name: string, host: string) => Promise<void>;
   removeManualHost: (deviceId: string) => Promise<void>;
+  addSnippet: (label: string, text: string) => Promise<void>;
+  removeSnippet: (id: string) => Promise<void>;
 }
 
 let sessionSeq = 0;
@@ -557,6 +559,23 @@ export const useStore = create<AppStore>((set, get) => ({
     const rawId = deviceId.replace(/^manual-/, "");
     await get().updateSettings({
       manualHosts: get().settings.manualHosts.filter((h) => h.id !== rawId),
+    });
+  },
+
+  async addSnippet(label, text) {
+    const entry = {
+      id: crypto.randomUUID(),
+      label: label.trim(),
+      text,
+    };
+    await get().updateSettings({
+      snippets: [...get().settings.snippets, entry],
+    });
+  },
+
+  async removeSnippet(id) {
+    await get().updateSettings({
+      snippets: get().settings.snippets.filter((s) => s.id !== id),
     });
   },
 }));

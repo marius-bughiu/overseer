@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 
+import { registerTerminal } from "../lib/terminalBus";
 import type { SessionStatus } from "../lib/types";
 
 /**
@@ -15,9 +16,11 @@ import type { SessionStatus } from "../lib/types";
  */
 export function SshTerminal({
   wsUrl,
+  sessionId,
   onStatus,
 }: {
   wsUrl: string;
+  sessionId?: string;
   onStatus?: (status: SessionStatus) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -76,10 +79,19 @@ export function SshTerminal({
     };
     ws.onerror = () => onStatus?.("error");
 
-    const dataSub = term.onData((data) => {
+    const send = (data: string) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(encoder.encode(data));
-    });
+    };
+    const dataSub = term.onData(send);
     const resizeSub = term.onResize(() => sendResize());
+
+    // Let the UI inject snippets / pasted keystrokes into this terminal.
+    const unregister = sessionId
+      ? registerTerminal(sessionId, (data) => {
+          send(data);
+          term.focus();
+        })
+      : undefined;
 
     const ro = new ResizeObserver(() => {
       try {
@@ -92,6 +104,7 @@ export function SshTerminal({
 
     return () => {
       ro.disconnect();
+      unregister?.();
       dataSub.dispose();
       resizeSub.dispose();
       try {
@@ -101,7 +114,7 @@ export function SshTerminal({
       }
       term.dispose();
     };
-  }, [wsUrl, onStatus]);
+  }, [wsUrl, sessionId, onStatus]);
 
   return <div ref={containerRef} className="h-full w-full bg-ink-950 p-1" />;
 }

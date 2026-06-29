@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from "react";
-import { Loader2, Maximize2, RefreshCw, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ClipboardPaste, Loader2, Maximize2, RefreshCw, X } from "lucide-react";
 
 import { useStore } from "../lib/store";
+import { sendToTerminal, toKeystrokes } from "../lib/terminalBus";
 import type { SessionStatus, SessionTab } from "../lib/types";
 import { FileBrowser } from "./FileBrowser";
 import { RdpViewer } from "./RdpViewer";
@@ -27,9 +28,23 @@ export function SessionHost({ session }: { session: SessionTab }) {
   const closeSession = useStore((s) => s.closeSession);
   const reopenSession = useStore((s) => s.reopenSession);
   const autoReconnect = useStore((s) => s.settings.autoReconnect);
+  const snippets = useStore((s) => s.settings.snippets);
+  const pushToast = useStore((s) => s.pushToast);
 
   const hostRef = useRef<HTMLDivElement>(null);
   const attempts = useRef(0);
+  const [snippetMenu, setSnippetMenu] = useState(false);
+
+  const isTerminal =
+    session.kind === "screen" &&
+    (session.protocol === "ssh" || session.protocol === "telnet");
+
+  function paste(text: string) {
+    setSnippetMenu(false);
+    if (!sendToTerminal(session.id, toKeystrokes(text))) {
+      pushToast("error", "Terminal is not connected.");
+    }
+  }
 
   const onStatus = useCallback(
     (status: SessionStatus) => updateSession(session.id, { status }),
@@ -72,6 +87,43 @@ export function SessionHost({ session }: { session: SessionTab }) {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {isTerminal && (
+            <div className="relative">
+              <button
+                className="btn-subtle p-1.5"
+                onClick={() => setSnippetMenu((v) => !v)}
+                title="Send a snippet"
+              >
+                <ClipboardPaste size={14} />
+              </button>
+              {snippetMenu && (
+                <div
+                  className="absolute right-0 z-20 mt-1 w-56 overflow-hidden rounded-md border border-ink-700 bg-ink-900 shadow-lg"
+                  onMouseLeave={() => setSnippetMenu(false)}
+                >
+                  {snippets.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-slate-500">
+                      No snippets yet. Add them in Settings.
+                    </p>
+                  ) : (
+                    <ul className="max-h-64 overflow-y-auto py-1">
+                      {snippets.map((sn) => (
+                        <li key={sn.id}>
+                          <button
+                            className="block w-full truncate px-3 py-1.5 text-left text-xs text-slate-200 hover:bg-ink-800"
+                            title={sn.text}
+                            onClick={() => paste(sn.text)}
+                          >
+                            {sn.label || sn.text}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <button
             className="btn-subtle p-1.5"
             onClick={toggleFullscreen}
@@ -119,7 +171,11 @@ export function SessionHost({ session }: { session: SessionTab }) {
             <Loader2 size={24} className="animate-spin text-brand-400" />
           </div>
         ) : session.protocol === "ssh" || session.protocol === "telnet" ? (
-          <SshTerminal wsUrl={session.wsUrl} onStatus={onStatus} />
+          <SshTerminal
+            wsUrl={session.wsUrl}
+            sessionId={session.id}
+            onStatus={onStatus}
+          />
         ) : session.protocol === "rdp" ? (
           <RdpViewer wsUrl={session.wsUrl} onStatus={onStatus} />
         ) : (

@@ -27,7 +27,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ In-session file transfer — SFTP browser (upload/download/mkdir/delete) for
   SSH hosts (RDP drive redirect still planned)
 - ⏳ Session recording (audit/training)
-- ⏳ Input automation: key-sequence & command tasks, paste-as-keystrokes
+- ✅ Input automation: reusable command snippets, paste-as-keystrokes into
+  SSH / Telnet sessions
 
 ## 2. Protocols
 

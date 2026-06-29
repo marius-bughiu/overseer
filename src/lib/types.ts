@@ -45,6 +45,13 @@ export interface ConnectionProfile {
   port?: number | null;
 }
 
+/** A reusable command snippet that can be pasted as keystrokes into a terminal. */
+export interface Snippet {
+  id: string;
+  label: string;
+  text: string;
+}
+
 /** A connection-history entry. */
 export interface HistoryEntry {
   deviceId: string;
@@ -77,6 +84,8 @@ export interface Settings {
   history: HistoryEntry[];
   /** User-added non-Tailscale hosts. */
   manualHosts: ManualHost[];
+  /** Reusable command snippets for terminal sessions. */
+  snippets: Snippet[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -92,6 +101,7 @@ export const DEFAULT_SETTINGS: Settings = {
   groups: {},
   history: [],
   manualHosts: [],
+  snippets: [],
 };
 
 /** A TOTP (2FA) account stored in the vault. */
