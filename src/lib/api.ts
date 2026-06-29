@@ -127,6 +127,23 @@ export function importCredentialsFile(
   return invoke("import_credentials", { path, format });
 }
 
+/** A single recorded terminal output event. */
+export interface CastEvent {
+  time: number;
+  data: string;
+}
+
+/** Write captured terminal output to an asciicast v2 recording file. */
+export function saveRecording(args: {
+  path: string;
+  width: number;
+  height: number;
+  title?: string | null;
+  events: CastEvent[];
+}): Promise<void> {
+  return invoke("save_recording", { ...args, title: args.title ?? null });
+}
+
 // --- SFTP file transfer ---
 
 export interface SftpFile {

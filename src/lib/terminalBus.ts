@@ -8,19 +8,35 @@
  */
 type Sender = (data: string) => void;
 
-const senders = new Map<string, Sender>();
+interface TerminalHandle {
+  send: Sender;
+  /** Live terminal dimensions (columns × rows). */
+  dims: () => { cols: number; rows: number };
+}
 
-/** Register (or replace) the input sender for a session. Returns an unregister fn. */
-export function registerTerminal(sessionId: string, send: Sender): () => void {
-  senders.set(sessionId, send);
+const terminals = new Map<string, TerminalHandle>();
+
+/** Register (or replace) the handle for a session. Returns an unregister fn. */
+export function registerTerminal(
+  sessionId: string,
+  handle: TerminalHandle,
+): () => void {
+  terminals.set(sessionId, handle);
   return () => {
-    if (senders.get(sessionId) === send) senders.delete(sessionId);
+    if (terminals.get(sessionId) === handle) terminals.delete(sessionId);
   };
 }
 
 /** Whether a live terminal is currently registered for this session. */
 export function hasTerminal(sessionId: string): boolean {
-  return senders.has(sessionId);
+  return terminals.has(sessionId);
+}
+
+/** Current dimensions of a session's terminal, or null if none is registered. */
+export function getTerminalDims(
+  sessionId: string,
+): { cols: number; rows: number } | null {
+  return terminals.get(sessionId)?.dims() ?? null;
 }
 
 /**
@@ -34,8 +50,8 @@ export function toKeystrokes(text: string): string {
 
 /** Send raw text to a session's terminal. Returns false if none is registered. */
 export function sendToTerminal(sessionId: string, data: string): boolean {
-  const send = senders.get(sessionId);
-  if (!send) return false;
-  send(data);
+  const handle = terminals.get(sessionId);
+  if (!handle) return false;
+  handle.send(data);
   return true;
 }

@@ -144,6 +144,7 @@ pub fn run() {
             commands::export_settings,
             commands::import_settings,
             commands::import_credentials,
+            commands::save_recording,
             commands::host_platform,
             commands::save_settings,
             commands::load_settings,

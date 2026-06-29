@@ -18,6 +18,7 @@
 pub mod connection;
 pub mod credimport;
 pub mod error;
+pub mod recording;
 pub mod tailscale;
 pub mod wol;
 
@@ -27,5 +28,6 @@ pub use connection::{
 };
 pub use credimport::{parse_export, CredentialFormat, ImportedEntry};
 pub use error::CoreError;
+pub use recording::{build_asciicast, CastEvent};
 pub use tailscale::{parse_api_devices, parse_local_status, Device, DiscoverySource};
 pub use wol::{build_magic_packet, parse_mac};

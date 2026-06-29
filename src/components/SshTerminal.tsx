@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 
+import { recordOutput, setRecordingDims } from "../lib/recorder";
 import { registerTerminal } from "../lib/terminalBus";
 import type { SessionStatus } from "../lib/types";
 
@@ -50,6 +51,7 @@ export function SshTerminal({
     }
 
     const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
     const ws = new WebSocket(wsUrl);
     ws.binaryType = "arraybuffer";
 
@@ -57,6 +59,7 @@ export function SshTerminal({
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ cols: term.cols, rows: term.rows }));
       }
+      if (sessionId) setRecordingDims(sessionId, term.cols, term.rows);
     };
 
     ws.onopen = () => {
@@ -70,8 +73,14 @@ export function SshTerminal({
       term.focus();
     };
     ws.onmessage = (ev) => {
-      if (typeof ev.data === "string") term.write(ev.data);
-      else term.write(new Uint8Array(ev.data as ArrayBuffer));
+      const text =
+        typeof ev.data === "string"
+          ? ev.data
+          : decoder.decode(new Uint8Array(ev.data as ArrayBuffer), {
+              stream: true,
+            });
+      term.write(text);
+      if (sessionId) recordOutput(sessionId, text);
     };
     ws.onclose = () => {
       term.write("\r\n\x1b[2m[overseer] session closed\x1b[0m\r\n");
@@ -85,11 +94,15 @@ export function SshTerminal({
     const dataSub = term.onData(send);
     const resizeSub = term.onResize(() => sendResize());
 
-    // Let the UI inject snippets / pasted keystrokes into this terminal.
+    // Let the UI inject snippets / pasted keystrokes into this terminal and
+    // read its live dimensions (for recording).
     const unregister = sessionId
-      ? registerTerminal(sessionId, (data) => {
-          send(data);
-          term.focus();
+      ? registerTerminal(sessionId, {
+          send: (data) => {
+            send(data);
+            term.focus();
+          },
+          dims: () => ({ cols: term.cols, rows: term.rows }),
         })
       : undefined;
 

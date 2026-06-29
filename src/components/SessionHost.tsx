@@ -1,8 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ClipboardPaste, Loader2, Maximize2, RefreshCw, X } from "lucide-react";
+import {
+  Circle,
+  ClipboardPaste,
+  Loader2,
+  Maximize2,
+  RefreshCw,
+  Square,
+  X,
+} from "lucide-react";
+import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 
+import {
+  cancelRecording,
+  isRecording,
+  startRecording,
+  stopRecording,
+} from "../lib/recorder";
 import { useStore } from "../lib/store";
-import { sendToTerminal, toKeystrokes } from "../lib/terminalBus";
+import {
+  getTerminalDims,
+  sendToTerminal,
+  toKeystrokes,
+} from "../lib/terminalBus";
 import type { SessionStatus, SessionTab } from "../lib/types";
 import { FileBrowser } from "./FileBrowser";
 import { RdpViewer } from "./RdpViewer";
@@ -34,6 +53,7 @@ export function SessionHost({ session }: { session: SessionTab }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const attempts = useRef(0);
   const [snippetMenu, setSnippetMenu] = useState(false);
+  const [recording, setRecording] = useState(() => isRecording(session.id));
 
   const isTerminal =
     session.kind === "screen" &&
@@ -43,6 +63,30 @@ export function SessionHost({ session }: { session: SessionTab }) {
     setSnippetMenu(false);
     if (!sendToTerminal(session.id, toKeystrokes(text))) {
       pushToast("error", "Terminal is not connected.");
+    }
+  }
+
+  async function toggleRecord() {
+    if (isRecording(session.id)) {
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      const safe = session.title.replace(/[^\w.-]+/g, "_");
+      const path = await saveDialog({
+        defaultPath: `${safe}-${stamp}.cast`,
+        filters: [{ name: "asciicast", extensions: ["cast"] }],
+      });
+      if (!path) return; // user cancelled; keep recording
+      try {
+        const n = await stopRecording(session.id, path, session.title);
+        setRecording(false);
+        pushToast("success", `Saved recording (${n ?? 0} events).`);
+      } catch (e) {
+        pushToast("error", `Could not save recording: ${String(e)}`);
+      }
+    } else {
+      const dims = getTerminalDims(session.id) ?? { cols: 80, rows: 24 };
+      startRecording(session.id, dims.cols, dims.rows);
+      setRecording(true);
+      pushToast("info", "Recording started.");
     }
   }
 
@@ -87,6 +131,19 @@ export function SessionHost({ session }: { session: SessionTab }) {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {isTerminal && (
+            <button
+              className={`btn-subtle p-1.5 ${recording ? "text-red-400" : ""}`}
+              onClick={() => void toggleRecord()}
+              title={recording ? "Stop & save recording" : "Record session"}
+            >
+              {recording ? (
+                <Square size={14} className="fill-current" />
+              ) : (
+                <Circle size={14} />
+              )}
+            </button>
+          )}
           {isTerminal && (
             <div className="relative">
               <button
@@ -140,7 +197,10 @@ export function SessionHost({ session }: { session: SessionTab }) {
           </button>
           <button
             className="btn-subtle p-1.5"
-            onClick={() => closeSession(session.id)}
+            onClick={() => {
+              cancelRecording(session.id);
+              closeSession(session.id);
+            }}
             title="Close session"
           >
             <X size={14} />

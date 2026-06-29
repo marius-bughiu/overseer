@@ -26,7 +26,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ⏳ Device & resource redirection (clipboard, drives, printers, audio)
 - ✅ In-session file transfer — SFTP browser (upload/download/mkdir/delete) for
   SSH hosts (RDP drive redirect still planned)
-- ⏳ Session recording (audit/training)
+- ✅ Session recording — terminal sessions captured to an asciicast v2
+  `.cast` file (replayable with asciinema)
 - ✅ Input automation: reusable command snippets, paste-as-keystrokes into
   SSH / Telnet sessions
 

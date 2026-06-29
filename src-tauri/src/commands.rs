@@ -1,7 +1,8 @@
 //! Tauri command handlers exposed to the frontend via `invoke()`.
 
 use overseer_core::{
-    parse_export, ConnectionRequest, CredentialFormat, Device, ImportedEntry, Protocol,
+    build_asciicast, parse_export, CastEvent, ConnectionRequest, CredentialFormat, Device,
+    ImportedEntry, Protocol,
 };
 use serde::Deserialize;
 
@@ -321,6 +322,20 @@ pub fn import_settings(path: String) -> Result<String> {
 pub fn import_credentials(path: String, format: CredentialFormat) -> Result<Vec<ImportedEntry>> {
     let contents = std::fs::read_to_string(&path).map_err(|e| AppError::Io(e.to_string()))?;
     Ok(parse_export(&contents, format)?)
+}
+
+/// Serialize captured terminal output events into an asciicast v2 recording and
+/// write it to a user-chosen path.
+#[tauri::command]
+pub fn save_recording(
+    path: String,
+    width: u16,
+    height: u16,
+    title: Option<String>,
+    events: Vec<CastEvent>,
+) -> Result<()> {
+    let cast = build_asciicast(width, height, title.as_deref(), &events);
+    std::fs::write(&path, cast).map_err(|e| AppError::Io(e.to_string()))
 }
 
 /// Persist non-secret app settings (the secret vault is handled separately by
