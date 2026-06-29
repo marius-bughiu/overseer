@@ -34,8 +34,15 @@ tauri-plugin-dialog = "2"
 # HTTP client for the Tailscale REST API. rustls avoids a system OpenSSL
 # dependency, which keeps mobile builds simple.
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-tokio = { version = "1", features = ["macros", "process", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "process", "rt-multi-thread", "net", "io-util", "sync", "time"] }
 log = "0.4"
+
+# Embedded in-app sessions: a localhost WebSocket bridge (VNC raw bytes) and a
+# pure-Rust SSH client (terminal streaming). Pure Rust → builds on mobile too.
+tokio-tungstenite = "0.24"
+futures-util = "0.3"
+russh = "0.54"
+rand = "0.8"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"

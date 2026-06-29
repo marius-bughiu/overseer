@@ -18,9 +18,12 @@
 pub mod connection;
 pub mod error;
 pub mod tailscale;
+pub mod wol;
 
 pub use connection::{
-    build_rdp_file, build_rdp_uri, build_vnc_uri, rdp_file_name, ConnectionRequest, Protocol,
+    build_rdp_file, build_rdp_uri, build_ssh_uri, build_vnc_uri, rdp_file_name, ConnectionRequest,
+    Protocol,
 };
 pub use error::CoreError;
 pub use tailscale::{parse_api_devices, parse_local_status, Device, DiscoverySource};
+pub use wol::{build_magic_packet, parse_mac};

@@ -27,6 +27,9 @@ pub enum AppError {
     #[error("failed to open the connection in a remote desktop client: {0}")]
     Launch(String),
 
+    #[error("embedded session error: {0}")]
+    Session(String),
+
     #[error("{0}")]
     Other(String),
 }

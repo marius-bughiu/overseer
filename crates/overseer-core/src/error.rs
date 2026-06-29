@@ -18,6 +18,10 @@ pub enum CoreError {
     /// A required field (e.g. host) was empty.
     #[error("missing required field: {0}")]
     MissingField(&'static str),
+
+    /// A MAC address could not be parsed for Wake-on-LAN.
+    #[error("invalid MAC address: {0}")]
+    InvalidMac(String),
 }
 
 /// Convenience alias used throughout the core crate.

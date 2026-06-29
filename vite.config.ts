@@ -28,10 +28,12 @@ export default defineConfig({
     },
   },
 
-  // Produce a build compatible with the webviews Tauri targets.
+  // Produce a build compatible with the webviews Tauri targets. Modern targets
+  // are required for top-level await (used by noVNC). These map to WebView2
+  // (Windows), WKWebView (macOS/iOS 15+) and recent WebKitGTK (Linux).
   build: {
     target:
-      process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari13",
+      process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari15",
     minify: process.env.TAURI_ENV_DEBUG ? false : "esbuild",
     sourcemap: !!process.env.TAURI_ENV_DEBUG,
   },

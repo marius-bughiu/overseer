@@ -9,6 +9,8 @@ mod commands;
 mod discovery;
 mod error;
 mod launcher;
+mod session;
+mod wol;
 
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -107,6 +109,9 @@ pub fn run() {
             commands::discover_devices,
             commands::tailscale_cli_available,
             commands::launch_connection,
+            commands::open_vnc_session,
+            commands::open_ssh_session,
+            commands::wake_on_lan,
             commands::host_platform,
             commands::save_settings,
             commands::load_settings,

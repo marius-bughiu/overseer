@@ -4,17 +4,35 @@ import {
   discoverDevices,
   hostPlatform,
   loadSettings,
+  openSshSession,
+  openVncSession,
   saveSettings,
   tailscaleCliAvailable,
 } from "./api";
 import { vault } from "./vault";
-import { DEFAULT_SETTINGS, type Device, type Settings } from "./types";
+import {
+  DEFAULT_SETTINGS,
+  type Device,
+  type Protocol,
+  type SessionTab,
+  type Settings,
+} from "./types";
 
 const TOKEN_SECRET = "tailscale_api_token";
 
 export type Platform = "android" | "ios" | "windows" | "macos" | "linux";
 export type View = "devices" | "settings" | "about";
 export type DeviceFilter = "all" | "online" | "favorites";
+
+/** Parameters for opening an embedded (in-app) session. */
+export interface OpenSessionArgs {
+  title: string;
+  protocol: Protocol;
+  host: string;
+  port: number;
+  username?: string | null;
+  password?: string | null;
+}
 
 export interface Toast {
   id: number;
@@ -44,6 +62,11 @@ interface AppStore {
   filter: DeviceFilter;
   toasts: Toast[];
 
+  // --- embedded sessions ---
+  sessions: SessionTab[];
+  /** "devices" (home) or a session id. */
+  activeTab: string;
+
   // --- actions ---
   init: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -57,7 +80,15 @@ interface AppStore {
   setFilter: (filter: DeviceFilter) => void;
   pushToast: (kind: Toast["kind"], message: string) => void;
   dismissToast: (id: number) => void;
+
+  // embedded sessions
+  openSession: (args: OpenSessionArgs) => Promise<void>;
+  closeSession: (id: string) => void;
+  setActiveTab: (id: string) => void;
+  updateSession: (id: string, patch: Partial<SessionTab>) => void;
 }
+
+let sessionSeq = 0;
 
 let toastSeq = 0;
 
@@ -78,6 +109,9 @@ export const useStore = create<AppStore>((set, get) => ({
   search: "",
   filter: "all",
   toasts: [],
+
+  sessions: [],
+  activeTab: "devices",
 
   async init() {
     try {
@@ -161,6 +195,64 @@ export const useStore = create<AppStore>((set, get) => ({
 
   dismissToast(id) {
     set({ toasts: get().toasts.filter((t) => t.id !== id) });
+  },
+
+  async openSession(args) {
+    const id = `session-${++sessionSeq}`;
+    const tab: SessionTab = {
+      id,
+      title: args.title,
+      protocol: args.protocol,
+      host: args.host,
+      port: args.port,
+      username: args.username ?? null,
+      password: args.password ?? null,
+      status: "connecting",
+    };
+    set({ sessions: [...get().sessions, tab], activeTab: id });
+
+    try {
+      let wsUrl: string;
+      if (args.protocol === "vnc") {
+        wsUrl = await openVncSession(args.host, args.port);
+      } else if (args.protocol === "ssh") {
+        wsUrl = await openSshSession({
+          host: args.host,
+          port: args.port,
+          username: args.username ?? "",
+          password: args.password ?? "",
+          cols: 80,
+          rows: 24,
+        });
+      } else {
+        throw new Error(`${args.protocol} cannot be embedded yet`);
+      }
+      get().updateSession(id, { wsUrl, status: "open" });
+    } catch (e) {
+      get().updateSession(id, { status: "error", error: String(e) });
+      get().pushToast("error", `Could not open session: ${String(e)}`);
+    }
+  },
+
+  closeSession(id) {
+    const remaining = get().sessions.filter((s) => s.id !== id);
+    const wasActive = get().activeTab === id;
+    set({
+      sessions: remaining,
+      activeTab: wasActive
+        ? (remaining[remaining.length - 1]?.id ?? "devices")
+        : get().activeTab,
+    });
+  },
+
+  setActiveTab: (id) => set({ activeTab: id }),
+
+  updateSession(id, patch) {
+    set({
+      sessions: get().sessions.map((s) =>
+        s.id === id ? { ...s, ...patch } : s,
+      ),
+    });
   },
 }));
 

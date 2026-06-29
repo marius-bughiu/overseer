@@ -24,8 +24,10 @@ use crate::error::{CoreError, Result};
 pub const DEFAULT_RDP_PORT: u16 = 3389;
 /// Default TCP port for VNC (RFB) display `:0`.
 pub const DEFAULT_VNC_PORT: u16 = 5900;
+/// Default TCP port for SSH.
+pub const DEFAULT_SSH_PORT: u16 = 22;
 
-/// The remote-desktop protocol to use for a connection.
+/// The remote-access protocol to use for a connection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Protocol {
@@ -33,6 +35,8 @@ pub enum Protocol {
     Rdp,
     /// Virtual Network Computing (RFB).
     Vnc,
+    /// Secure Shell.
+    Ssh,
 }
 
 impl Protocol {
@@ -41,7 +45,13 @@ impl Protocol {
         match self {
             Protocol::Rdp => DEFAULT_RDP_PORT,
             Protocol::Vnc => DEFAULT_VNC_PORT,
+            Protocol::Ssh => DEFAULT_SSH_PORT,
         }
+    }
+
+    /// Whether Overseer can render this protocol in an embedded, in-app tab.
+    pub fn supports_embedded(self) -> bool {
+        matches!(self, Protocol::Vnc | Protocol::Ssh)
     }
 }
 
@@ -167,6 +177,18 @@ pub fn build_vnc_uri(req: &ConnectionRequest) -> Result<String> {
     Ok(format!("vnc://{authority}:{}", req.port))
 }
 
+/// Build an `ssh://[user@]host:port` URL for an external terminal / handler.
+pub fn build_ssh_uri(req: &ConnectionRequest) -> Result<String> {
+    if req.protocol != Protocol::Ssh {
+        return Err(CoreError::MissingField("ssh protocol"));
+    }
+    let authority = match &req.username {
+        Some(user) => format!("{}@{}", percent_encode(user), req.host),
+        None => req.host.clone(),
+    };
+    Ok(format!("ssh://{authority}:{}", req.port))
+}
+
 /// A suggested file name (without directory) for the `.rdp` artifact.
 pub fn rdp_file_name(req: &ConnectionRequest) -> String {
     let safe: String = req
@@ -290,5 +312,36 @@ mod tests {
     fn default_ports_are_conventional() {
         assert_eq!(Protocol::Rdp.default_port(), 3389);
         assert_eq!(Protocol::Vnc.default_port(), 5900);
+        assert_eq!(Protocol::Ssh.default_port(), 22);
+    }
+
+    #[test]
+    fn embedded_support_is_vnc_and_ssh() {
+        assert!(Protocol::Vnc.supports_embedded());
+        assert!(Protocol::Ssh.supports_embedded());
+        assert!(!Protocol::Rdp.supports_embedded());
+    }
+
+    #[test]
+    fn ssh_uri_with_and_without_user() {
+        let plain = ConnectionRequest::new(Protocol::Ssh, "100.64.0.7", 22, None, "Box").unwrap();
+        assert_eq!(build_ssh_uri(&plain).unwrap(), "ssh://100.64.0.7:22");
+
+        let with_user = ConnectionRequest::new(
+            Protocol::Ssh,
+            "100.64.0.7",
+            2222,
+            Some("root".into()),
+            "Box",
+        )
+        .unwrap();
+        assert_eq!(
+            build_ssh_uri(&with_user).unwrap(),
+            "ssh://root@100.64.0.7:2222"
+        );
+
+        // Mismatched protocol is rejected.
+        let rdp = rdp(None);
+        assert!(build_ssh_uri(&rdp).is_err());
     }
 }

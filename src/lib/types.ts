@@ -14,7 +14,7 @@ export interface Device {
   source: DiscoverySource;
 }
 
-export type Protocol = "rdp" | "vnc";
+export type Protocol = "rdp" | "vnc" | "ssh";
 
 export type DiscoveryMethod = "cli" | "api";
 
@@ -50,4 +50,20 @@ export interface Credential {
   /** Optional default port override for this device. */
   port?: number | null;
   domain?: string | null;
+}
+
+export type SessionStatus = "connecting" | "open" | "error" | "closed";
+
+/** An open, embedded (in-app) session tab. */
+export interface SessionTab {
+  id: string;
+  title: string;
+  protocol: Protocol; // "vnc" | "ssh" — embedded protocols
+  host: string;
+  port: number;
+  username?: string | null;
+  password?: string | null;
+  wsUrl?: string;
+  status: SessionStatus;
+  error?: string;
 }

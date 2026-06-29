@@ -10,7 +10,14 @@ module.exports = {
   parser: "@typescript-eslint/parser",
   parserOptions: { ecmaVersion: "latest", sourceType: "module" },
   plugins: ["@typescript-eslint", "react-refresh"],
-  ignorePatterns: ["dist", "src-tauri", "node_modules", "*.cjs", "vite.config.ts"],
+  ignorePatterns: [
+    "dist",
+    "src-tauri",
+    "target",
+    "node_modules",
+    "*.cjs",
+    "vite.config.ts",
+  ],
   rules: {
     "react-refresh/only-export-components": [
       "warn",

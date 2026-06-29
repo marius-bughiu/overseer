@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use crate::error::{AppError, Result};
 use crate::launcher::{self, LaunchOutcome};
-use crate::{discovery, AppState};
+use crate::{discovery, session, wol, AppState};
 
 /// Which discovery backend to use.
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -72,6 +72,33 @@ pub async fn launch_connection(app: tauri::AppHandle, params: LaunchParams) -> R
         LaunchOutcome::OpenedUri(uri) => Ok(format!("Opened {uri}")),
         LaunchOutcome::OpenedFile(path) => Ok(format!("Opened {path}")),
     }
+}
+
+/// Open an embedded **VNC** session bridge. Returns the loopback WebSocket URL
+/// the frontend's noVNC client should connect to.
+#[tauri::command]
+pub async fn open_vnc_session(host: String, port: u16) -> Result<String> {
+    session::open_vnc(host, port).await
+}
+
+/// Open an embedded **SSH** session bridge. Returns the loopback WebSocket URL
+/// the frontend's xterm.js terminal should connect to.
+#[tauri::command]
+pub async fn open_ssh_session(
+    host: String,
+    port: u16,
+    username: String,
+    password: String,
+    cols: u32,
+    rows: u32,
+) -> Result<String> {
+    session::open_ssh(host, port, username, password, cols, rows).await
+}
+
+/// Send a Wake-on-LAN magic packet to wake a sleeping machine.
+#[tauri::command]
+pub async fn wake_on_lan(mac: String, broadcast: Option<String>) -> Result<()> {
+    wol::send_wake(&mac, broadcast.as_deref()).await
 }
 
 /// Return the OS family Overseer is running on. Used by the UI to adapt copy

@@ -20,9 +20,34 @@ export function tailscaleCliAvailable(): Promise<boolean> {
   return invoke<boolean>("tailscale_cli_available");
 }
 
-/** Launch an RDP/VNC session. Returns a short status string. */
+/** Launch an RDP/VNC/SSH session in an external client. Returns a status string. */
 export function launchConnection(params: LaunchParams): Promise<string> {
   return invoke<string>("launch_connection", { params });
+}
+
+/** Open an embedded VNC bridge; returns the loopback WebSocket URL for noVNC. */
+export function openVncSession(host: string, port: number): Promise<string> {
+  return invoke<string>("open_vnc_session", { host, port });
+}
+
+/** Open an embedded SSH bridge; returns the loopback WebSocket URL for xterm. */
+export function openSshSession(args: {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  cols: number;
+  rows: number;
+}): Promise<string> {
+  return invoke<string>("open_ssh_session", args);
+}
+
+/** Send a Wake-on-LAN magic packet. */
+export function wakeOnLan(
+  mac: string,
+  broadcast?: string | null,
+): Promise<void> {
+  return invoke("wake_on_lan", { mac, broadcast: broadcast ?? null });
 }
 
 /** The OS family Overseer is running on. */

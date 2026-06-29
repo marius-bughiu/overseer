@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Loader2, MonitorPlay, Save } from "lucide-react";
+import { ExternalLink, Loader2, MonitorPlay, Save } from "lucide-react";
 
 import { launchConnection } from "../lib/api";
 import { primaryAddress } from "../lib/devices";
@@ -9,7 +9,16 @@ import { vault } from "../lib/vault";
 import { Modal } from "./Modal";
 import { VaultGate } from "./VaultGate";
 
-const DEFAULT_PORT: Record<Protocol, number> = { rdp: 3389, vnc: 5900 };
+const DEFAULT_PORT: Record<Protocol, number> = {
+  rdp: 3389,
+  vnc: 5900,
+  ssh: 22,
+};
+
+/** RDP can't be embedded yet — it always opens in the external client. */
+const EMBEDDABLE: Protocol[] = ["vnc", "ssh"];
+
+type Mode = "app" | "external";
 
 export function ConnectDialog({
   device,
@@ -22,6 +31,7 @@ export function ConnectDialog({
   const updateSettings = useStore((s) => s.updateSettings);
   const vaultUnlocked = useStore((s) => s.vaultUnlocked);
   const pushToast = useStore((s) => s.pushToast);
+  const openSession = useStore((s) => s.openSession);
 
   const [protocol, setProtocol] = useState<Protocol>(preferred);
   const [host, setHost] = useState(primaryAddress(device));
@@ -31,6 +41,10 @@ export function ConnectDialog({
   const [saveCreds, setSaveCreds] = useState(false);
   const [busy, setBusy] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
+  const [mode, setMode] = useState<Mode>("app");
+
+  const embeddable = EMBEDDABLE.includes(protocol);
+  const effectiveMode: Mode = embeddable ? mode : "external";
 
   // Prefill from a stored credential when the vault is open.
   useEffect(() => {
@@ -68,6 +82,22 @@ export function ConnectDialog({
         await vault.setCredential(device.id, { username, password, port });
       }
       await updateSettings({ preferredProtocol: protocol });
+
+      if (effectiveMode === "app") {
+        // Embedded, in-app session (tabbed).
+        await openSession({
+          title: device.name,
+          protocol,
+          host: host.trim(),
+          port,
+          username: username.trim() || null,
+          password: password || null,
+        });
+        onClose();
+        return;
+      }
+
+      // External client launch.
       const status = await launchConnection({
         protocol,
         host: host.trim(),
@@ -130,8 +160,8 @@ export function ConnectDialog({
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <span className="label">Protocol</span>
-          <div className="grid grid-cols-2 gap-2">
-            {(["rdp", "vnc"] as Protocol[]).map((p) => (
+          <div className="grid grid-cols-3 gap-2">
+            {(["rdp", "vnc", "ssh"] as Protocol[]).map((p) => (
               <button
                 key={p}
                 type="button"
@@ -146,6 +176,41 @@ export function ConnectDialog({
               </button>
             ))}
           </div>
+        </div>
+
+        <div>
+          <span className="label">Open</span>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={!embeddable}
+              onClick={() => setMode("app")}
+              className={`btn ${
+                effectiveMode === "app"
+                  ? "bg-accent-600 text-white"
+                  : "bg-ink-800 text-slate-300 border border-ink-700 hover:bg-ink-700"
+              } disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              <MonitorPlay size={15} /> In app
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("external")}
+              className={`btn ${
+                effectiveMode === "external"
+                  ? "bg-accent-600 text-white"
+                  : "bg-ink-800 text-slate-300 border border-ink-700 hover:bg-ink-700"
+              }`}
+            >
+              <ExternalLink size={15} /> External
+            </button>
+          </div>
+          {!embeddable && (
+            <p className="mt-1.5 text-xs text-slate-500">
+              In-app RDP is coming soon. RDP opens in your system client for
+              now.
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-2">

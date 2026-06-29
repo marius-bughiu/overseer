@@ -9,6 +9,8 @@ import {
 
 import { About } from "./components/About";
 import { DeviceList } from "./components/DeviceList";
+import { SessionHost } from "./components/SessionHost";
+import { SessionTabs } from "./components/SessionTabs";
 import { Settings } from "./components/Settings";
 import { Toasts } from "./components/Toasts";
 import { useStore, type View } from "./lib/store";
@@ -27,6 +29,17 @@ export default function App() {
   const vaultUnlocked = useStore((s) => s.vaultUnlocked);
   const settings = useStore((s) => s.settings);
   const apiToken = useStore((s) => s.apiToken);
+  const sessions = useStore((s) => s.sessions);
+  const activeTab = useStore((s) => s.activeTab);
+  const setActiveTab = useStore((s) => s.setActiveTab);
+
+  const activeSession = sessions.find((s) => s.id === activeTab) ?? null;
+  const showingSession = activeTab !== "devices" && activeSession !== null;
+
+  function navTo(id: View) {
+    setView(id);
+    setActiveTab("devices");
+  }
 
   // One-time startup: load environment + settings.
   useEffect(() => {
@@ -61,11 +74,13 @@ export default function App() {
           {NAV.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setView(id)}
+              onClick={() => navTo(id)}
               className={`btn-subtle px-2.5 ${
-                view === id ? "bg-ink-800 text-brand-400" : ""
+                view === id && !showingSession
+                  ? "bg-ink-800 text-brand-400"
+                  : ""
               }`}
-              aria-current={view === id ? "page" : undefined}
+              aria-current={view === id && !showingSession ? "page" : undefined}
             >
               <Icon size={16} />
               <span className="hidden sm:inline">{label}</span>
@@ -84,18 +99,27 @@ export default function App() {
         </nav>
       </header>
 
-      <main className="min-h-0 flex-1">
-        {view === "devices" && <DeviceList />}
-        {view === "settings" && (
-          <div className="h-full overflow-y-auto">
-            <Settings />
-          </div>
-        )}
-        {view === "about" && (
-          <div className="h-full overflow-y-auto">
-            <About />
-          </div>
-        )}
+      <main className="flex min-h-0 flex-1 flex-col">
+        <SessionTabs />
+        <div className="min-h-0 flex-1">
+          {showingSession && activeSession ? (
+            <SessionHost session={activeSession} />
+          ) : (
+            <>
+              {view === "devices" && <DeviceList />}
+              {view === "settings" && (
+                <div className="h-full overflow-y-auto">
+                  <Settings />
+                </div>
+              )}
+              {view === "about" && (
+                <div className="h-full overflow-y-auto">
+                  <About />
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </main>
 
       <Toasts />

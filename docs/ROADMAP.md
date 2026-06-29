@@ -1,0 +1,96 @@
+# Overseer Roadmap
+
+This roadmap captures every feature on the path from a Tailscale connection
+*launcher* to a full, in-app, tabbed remote desktop *client*. It is derived from
+a feature-gap analysis against Remmina, Devolutions RDM, mRemoteNG, Royal TS,
+Microsoft Windows App, and Jump Desktop.
+
+Status legend: ✅ done · 🚧 in progress · ⏳ planned
+
+## North star
+
+> Every session runs **inside Overseer** — embedded, tabbed, multi-session —
+> over the Tailscale mesh, with credentials in an encrypted vault and zero
+> telemetry.
+
+## 1. In-app, tabbed, embedded sessions (headline)
+
+- 🚧 Tabbed multi-session shell (open many sessions in one window)
+- 🚧 Embedded **SSH** terminal (xterm.js + russh backend)
+- 🚧 Embedded **VNC** viewer (noVNC + in-process WebSocket↔TCP bridge)
+- ⏳ Embedded **RDP** client (IronRDP, pure-Rust)
+- ⏳ Live session thumbnails / overview grid
+- ⏳ Per-session reconnect & connection status
+- ⏳ Full-screen & detached-window sessions
+- ⏳ Multi-monitor (RDP) & dynamic resolution / scaling
+- ⏳ Device & resource redirection (clipboard, drives, printers, audio)
+- ⏳ In-session file transfer (SFTP for SSH, drive redirect for RDP)
+- ⏳ Session recording (audit/training)
+- ⏳ Input automation: key-sequence & command tasks, paste-as-keystrokes
+
+## 2. Protocols
+
+- ✅ RDP (launch / external client)
+- ✅ VNC (launch / external client)
+- 🚧 SSH (launch + embedded)
+- ⏳ SFTP file browser
+- ⏳ Telnet, SPICE
+- ⏳ Web/HTTP(S) console tabs
+- ⏳ RDP Gateway support
+
+## 3. Connection organization
+
+- ✅ Search, online/favorites filters, tags, favorites
+- 🚧 Per-machine **connection profiles** (protocol, port, resolution, redirects, gateway, username)
+- 🚧 Connection **history** & quick-reconnect
+- ⏳ Folder / tree grouping
+- ⏳ Manual (non-Tailscale) hosts
+- ⏳ Import / export connections
+
+## 4. Connectivity
+
+- 🚧 **Wake-on-LAN** (magic packet, routable via a tailnet peer)
+- ⏳ Connection health / latency ping
+- ⏳ Port scan of a device
+- ⏳ Auto-reconnect on drop
+
+## 5. Security & credentials
+
+- ✅ Encrypted Stronghold vault (per-machine credentials + API token)
+- ✅ Manual vault lock
+- 🚧 Auto-lock on idle
+- ⏳ Biometric unlock (Touch ID / Windows Hello / Android biometric)
+- ⏳ Credential injection into embedded sessions (no manual typing)
+- ⏳ External password-manager import (KeePass / Bitwarden / 1Password)
+- ⏳ SSH key management & agent
+- ⏳ Host-key verification & trust store
+- ⏳ TOTP / 2FA secret storage
+
+## 6. Experience & platform
+
+- ✅ Dark theme, responsive desktop + mobile layout
+- 🚧 Light theme + theme toggle
+- ⏳ Command palette & keyboard shortcuts
+- ⏳ Localization (i18n)
+- ⏳ Settings sync across devices
+
+## 7. Team / enterprise (later, optional — must not add telemetry)
+
+- ⏳ Shared, encrypted connection data source
+- ⏳ Role-based access control
+- ⏳ Session audit log & reporting
+
+---
+
+### Implementation waves
+
+1. **Foundations** — roadmap, SSH protocol, Wake-on-LAN, connection profiles,
+   connection history, light theme. *(core-testable, low risk)*
+2. **Embedded sessions** — tabbed shell, embedded SSH terminal, embedded VNC
+   viewer.
+3. **Embedded RDP** — IronRDP integration.
+4. **Power features** — SFTP file transfer, multi-monitor, redirection,
+   recording, input automation.
+5. **Security & sync** — auto-lock, biometrics, credential injection, external
+   vaults, settings sync.
+6. **Org & enterprise** — folders, import/export, manual hosts, sharing.
