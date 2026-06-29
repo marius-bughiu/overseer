@@ -21,7 +21,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Embedded **RDP** client (IronRDP, pure-Rust; canvas framebuffer + input)
 - ⏳ Live session thumbnails / overview grid
 - ⏳ Per-session reconnect & connection status
-- ⏳ Full-screen & detached-window sessions
+- ✅ Full-screen sessions (detached-window still planned)
 - ⏳ Multi-monitor (RDP) & dynamic resolution / scaling
 - ⏳ Device & resource redirection (clipboard, drives, printers, audio)
 - ✅ In-session file transfer — SFTP browser (upload/download/mkdir/delete) for

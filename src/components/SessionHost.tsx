@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { Loader2, RefreshCw, X } from "lucide-react";
+import { useCallback, useRef } from "react";
+import { Loader2, Maximize2, RefreshCw, X } from "lucide-react";
 
 import { useStore } from "../lib/store";
 import type { SessionStatus, SessionTab } from "../lib/types";
@@ -28,10 +28,19 @@ export function SessionHost({ session }: { session: SessionTab }) {
   const openSession = useStore((s) => s.openSession);
   const openFiles = useStore((s) => s.openFiles);
 
+  const hostRef = useRef<HTMLDivElement>(null);
+
   const onStatus = useCallback(
     (status: SessionStatus) => updateSession(session.id, { status }),
     [session.id, updateSession],
   );
+
+  function toggleFullscreen() {
+    const el = hostRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void el.requestFullscreen?.();
+  }
 
   async function reconnect() {
     closeSession(session.id);
@@ -48,7 +57,7 @@ export function SessionHost({ session }: { session: SessionTab }) {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div ref={hostRef} className="flex h-full flex-col bg-ink-950">
       <div className="flex items-center justify-between border-b border-ink-800 bg-ink-900/60 px-3 py-1.5 text-xs">
         <div className="flex items-center gap-2 text-slate-300">
           <span
@@ -61,6 +70,13 @@ export function SessionHost({ session }: { session: SessionTab }) {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          <button
+            className="btn-subtle p-1.5"
+            onClick={toggleFullscreen}
+            title="Fullscreen"
+          >
+            <Maximize2 size={14} />
+          </button>
           <button
             className="btn-subtle p-1.5"
             onClick={() => void reconnect()}
