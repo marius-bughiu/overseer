@@ -28,6 +28,7 @@ export function Settings() {
   const setApiToken = useStore((s) => s.setApiToken);
   const pushToast = useStore((s) => s.pushToast);
   const autoLockMinutes = useStore((s) => s.settings.autoLockMinutes);
+  const autoReconnect = useStore((s) => s.settings.autoReconnect);
   const history = useStore((s) => s.settings.history);
   const exportSettings = useStore((s) => s.exportSettings);
   const importSettings = useStore((s) => s.importSettings);
@@ -191,6 +192,23 @@ export function Settings() {
             <option value={60}>1 hour</option>
           </select>
         </div>
+
+        <label className="mt-4 flex cursor-pointer items-center justify-between rounded-lg border border-ink-700 bg-ink-800 px-4 py-3">
+          <span className="text-sm text-slate-300">
+            Auto-reconnect dropped sessions
+            <span className="ml-1 block text-xs text-slate-500">
+              Retry an embedded session a few times if it drops.
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-ink-600 bg-ink-800 accent-brand-500"
+            checked={autoReconnect}
+            onChange={(e) =>
+              void updateSettings({ autoReconnect: e.target.checked })
+            }
+          />
+        </label>
 
         <div className="mt-4 flex items-center justify-between rounded-lg border border-ink-700 bg-ink-800 px-4 py-3">
           <span className="text-sm text-slate-300">

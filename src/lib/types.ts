@@ -65,6 +65,8 @@ export interface Settings {
   theme: Theme;
   /** Auto-lock the vault after this many minutes idle (0 = never). */
   autoLockMinutes: number;
+  /** Automatically try to reconnect a dropped session. */
+  autoReconnect: boolean;
   /** Per-device MAC addresses for Wake-on-LAN. */
   deviceMacs: Record<string, string>;
   /** Per-device remembered connection profiles. */
@@ -84,6 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   favorites: [],
   theme: "dark",
   autoLockMinutes: 15,
+  autoReconnect: true,
   deviceMacs: {},
   profiles: {},
   groups: {},

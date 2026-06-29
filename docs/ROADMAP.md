@@ -53,8 +53,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 
 - ✅ **Wake-on-LAN** (magic packet, routable via a tailnet peer)
 - ✅ Connection health / latency ping (TCP connect probe)
-- ⏳ Port scan of a device
-- ✅ Per-session manual reconnect (auto-reconnect on drop planned)
+- ✅ Port scan of a device (common-port sweep in the connect dialog)
+- ✅ Auto-reconnect on drop (bounded) + per-session manual reconnect
 
 ## 5. Security & credentials
 

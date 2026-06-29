@@ -71,6 +71,14 @@ export function tcpPing(host: string, port: number): Promise<number | null> {
   return invoke("tcp_ping", { host, port });
 }
 
+/** Scan a host for open TCP ports (common ports if none given). */
+export function portScan(
+  host: string,
+  ports: number[] = [],
+): Promise<number[]> {
+  return invoke("port_scan", { host, ports });
+}
+
 /** Forget all trusted SSH host keys (TOFU reset). */
 export function resetKnownHosts(): Promise<void> {
   return invoke("reset_known_hosts");

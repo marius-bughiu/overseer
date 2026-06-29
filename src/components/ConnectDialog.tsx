@@ -8,7 +8,7 @@ import {
   Save,
 } from "lucide-react";
 
-import { launchConnection } from "../lib/api";
+import { launchConnection, portScan } from "../lib/api";
 import { primaryAddress } from "../lib/devices";
 import { useStore } from "../lib/store";
 import type { Device, Protocol } from "../lib/types";
@@ -63,6 +63,19 @@ export function ConnectDialog({
   const [mode, setMode] = useState<Mode>(profile?.mode ?? "app");
   const [mac, setMac] = useState(savedMac);
   const [group, setGroupValue] = useState(savedGroup);
+  const [scanning, setScanning] = useState(false);
+  const [openPorts, setOpenPorts] = useState<number[]>([]);
+
+  async function scanPorts() {
+    setScanning(true);
+    try {
+      setOpenPorts(await portScan(host.trim()));
+    } catch (err) {
+      pushToast("error", String(err));
+    } finally {
+      setScanning(false);
+    }
+  }
 
   const embeddable = EMBEDDABLE.includes(protocol);
   const effectiveMode: Mode = embeddable ? mode : "external";
@@ -291,6 +304,31 @@ export function ConnectDialog({
               onChange={(e) => setPort(Number(e.target.value))}
             />
           </div>
+        </div>
+
+        <div>
+          <button
+            type="button"
+            className="text-xs text-brand-400 hover:underline disabled:opacity-50"
+            disabled={scanning}
+            onClick={() => void scanPorts()}
+          >
+            {scanning ? "Scanning…" : "Scan open ports"}
+          </button>
+          {openPorts.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {openPorts.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className="chip hover:border-brand-600"
+                  onClick={() => setPort(p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

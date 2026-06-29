@@ -128,6 +128,7 @@ pub fn run() {
             commands::open_rdp_session,
             commands::wake_on_lan,
             commands::tcp_ping,
+            commands::port_scan,
             commands::sftp_connect,
             commands::sftp_list,
             commands::sftp_home,

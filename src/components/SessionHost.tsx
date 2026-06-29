@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Loader2, Maximize2, RefreshCw, X } from "lucide-react";
 
 import { useStore } from "../lib/store";
@@ -25,10 +25,11 @@ const STATUS_COLOR: Record<SessionStatus, string> = {
 export function SessionHost({ session }: { session: SessionTab }) {
   const updateSession = useStore((s) => s.updateSession);
   const closeSession = useStore((s) => s.closeSession);
-  const openSession = useStore((s) => s.openSession);
-  const openFiles = useStore((s) => s.openFiles);
+  const reopenSession = useStore((s) => s.reopenSession);
+  const autoReconnect = useStore((s) => s.settings.autoReconnect);
 
   const hostRef = useRef<HTMLDivElement>(null);
+  const attempts = useRef(0);
 
   const onStatus = useCallback(
     (status: SessionStatus) => updateSession(session.id, { status }),
@@ -42,19 +43,20 @@ export function SessionHost({ session }: { session: SessionTab }) {
     else void el.requestFullscreen?.();
   }
 
-  async function reconnect() {
-    closeSession(session.id);
-    const args = {
-      title: session.title.replace(/ · files$/, ""),
-      protocol: session.protocol,
-      host: session.host,
-      port: session.port,
-      username: session.username,
-      password: session.password,
-    };
-    if (session.kind === "files") await openFiles(args);
-    else await openSession(args);
-  }
+  const reconnect = useCallback(() => {
+    attempts.current = 0;
+    return reopenSession(session.id);
+  }, [reopenSession, session.id]);
+
+  // Bounded auto-reconnect on an unexpected drop (max 3 attempts per episode).
+  useEffect(() => {
+    if (session.status === "open") attempts.current = 0;
+    if (autoReconnect && session.status === "closed" && attempts.current < 3) {
+      attempts.current += 1;
+      const t = setTimeout(() => void reopenSession(session.id), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [session.status, autoReconnect, reopenSession, session.id]);
 
   return (
     <div ref={hostRef} className="flex h-full flex-col bg-ink-950">

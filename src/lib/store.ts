@@ -35,6 +35,30 @@ export function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("light", theme === "light");
 }
 
+/** Open the backend bridge for an embedded (screen) protocol; returns ws URL. */
+async function connectProtocol(args: OpenSessionArgs): Promise<string> {
+  if (args.protocol === "vnc") return openVncSession(args.host, args.port);
+  if (args.protocol === "ssh")
+    return openSshSession({
+      host: args.host,
+      port: args.port,
+      username: args.username ?? "",
+      password: args.password ?? "",
+      cols: 80,
+      rows: 24,
+    });
+  if (args.protocol === "rdp")
+    return openRdpSession({
+      host: args.host,
+      port: args.port,
+      username: args.username ?? "",
+      password: args.password ?? "",
+      width: 1280,
+      height: 800,
+    });
+  throw new Error(`${args.protocol} cannot be embedded`);
+}
+
 const TOKEN_SECRET = "tailscale_api_token";
 
 export type Platform = "android" | "ios" | "windows" | "macos" | "linux";
@@ -112,6 +136,7 @@ interface AppStore {
   // embedded sessions
   openSession: (args: OpenSessionArgs) => Promise<void>;
   openFiles: (args: OpenSessionArgs) => Promise<void>;
+  reopenSession: (id: string) => Promise<void>;
   closeSession: (id: string) => void;
   setActiveTab: (id: string) => void;
   updateSession: (id: string, patch: Partial<SessionTab>) => void;
@@ -285,30 +310,7 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ sessions: [...get().sessions, tab], activeTab: id });
 
     try {
-      let wsUrl: string;
-      if (args.protocol === "vnc") {
-        wsUrl = await openVncSession(args.host, args.port);
-      } else if (args.protocol === "ssh") {
-        wsUrl = await openSshSession({
-          host: args.host,
-          port: args.port,
-          username: args.username ?? "",
-          password: args.password ?? "",
-          cols: 80,
-          rows: 24,
-        });
-      } else if (args.protocol === "rdp") {
-        wsUrl = await openRdpSession({
-          host: args.host,
-          port: args.port,
-          username: args.username ?? "",
-          password: args.password ?? "",
-          width: 1280,
-          height: 800,
-        });
-      } else {
-        throw new Error(`${args.protocol} cannot be embedded yet`);
-      }
+      const wsUrl = await connectProtocol(args);
       get().updateSession(id, { wsUrl, status: "open" });
     } catch (e) {
       get().updateSession(id, { status: "error", error: String(e) });
@@ -341,6 +343,41 @@ export const useStore = create<AppStore>((set, get) => ({
     } catch (e) {
       get().updateSession(id, { status: "error", error: String(e) });
       get().pushToast("error", `Could not open files: ${String(e)}`);
+    }
+  },
+
+  async reopenSession(id) {
+    const s = get().sessions.find((x) => x.id === id);
+    if (!s) return;
+    if (s.sftpId) void sftp.disconnect(s.sftpId);
+    get().updateSession(id, {
+      status: "connecting",
+      wsUrl: undefined,
+      sftpId: undefined,
+      error: undefined,
+    });
+    try {
+      if (s.kind === "files") {
+        const sftpId = await sftp.connect({
+          host: s.host,
+          port: s.port,
+          username: s.username ?? "",
+          password: s.password ?? "",
+        });
+        get().updateSession(id, { sftpId, status: "open" });
+      } else {
+        const wsUrl = await connectProtocol({
+          title: s.title,
+          protocol: s.protocol,
+          host: s.host,
+          port: s.port,
+          username: s.username,
+          password: s.password,
+        });
+        get().updateSession(id, { wsUrl, status: "open" });
+      }
+    } catch (e) {
+      get().updateSession(id, { status: "error", error: String(e) });
     }
   },
 

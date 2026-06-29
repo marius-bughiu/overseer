@@ -133,6 +133,38 @@ pub async fn tcp_ping(host: String, port: u16) -> Option<u64> {
     }
 }
 
+/// Scan a host for open TCP ports. If `ports` is empty, a set of common
+/// remote-access ports is used. Returns the open ports.
+#[tauri::command]
+pub async fn port_scan(host: String, ports: Vec<u16>) -> Vec<u16> {
+    let targets = if ports.is_empty() {
+        vec![22, 80, 139, 443, 445, 3389, 5900, 5901, 5985, 5986, 8080]
+    } else {
+        ports
+    };
+
+    let mut handles = Vec::new();
+    for port in targets {
+        let host = host.clone();
+        handles.push(tokio::spawn(async move {
+            let connect = tokio::net::TcpStream::connect((host.as_str(), port));
+            match tokio::time::timeout(std::time::Duration::from_millis(800), connect).await {
+                Ok(Ok(_)) => Some(port),
+                _ => None,
+            }
+        }));
+    }
+
+    let mut open = Vec::new();
+    for h in handles {
+        if let Ok(Some(port)) = h.await {
+            open.push(port);
+        }
+    }
+    open.sort_unstable();
+    open
+}
+
 /// Return the OS family Overseer is running on. Used by the UI to adapt copy
 /// (e.g. which remote desktop client to suggest installing).
 #[tauri::command]
