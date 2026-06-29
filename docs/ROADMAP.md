@@ -7,6 +7,16 @@ Microsoft Windows App, and Jump Desktop.
 
 Status legend: ✅ done · 🚧 in progress · ⏳ planned
 
+## Status
+
+The headline experience and the great majority of planned features are
+**implemented and merged**. What remains are a handful of items that each need
+substantial protocol-client or native-platform work — SPICE, RDP Gateway,
+RDP multi-monitor, RDP device redirection (drives/printers/audio), and native
+biometric unlock. These are intentionally left as tracked future milestones
+rather than shipped half-done. Team/enterprise items are out of scope by
+choice (and must never add telemetry).
+
 ## North star
 
 > Every session runs **inside Overseer** — embedded, tabbed, multi-session —
@@ -23,9 +33,11 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
   periodically; click to focus)
 - ✅ Per-session reconnect & connection status
 - ✅ Full-screen sessions (detached-window still planned)
-- ✅ RDP resolution selection + scale-to-fit rendering (⏳ multi-monitor)
+- ✅ RDP resolution selection + scale-to-fit rendering (⏳ multi-monitor —
+  needs IronRDP multi-mon support)
 - ✅ Clipboard redirection — paste the local clipboard into SSH / Telnet / VNC
-  sessions (⏳ drives, printers, audio)
+  sessions (⏳ drives, printers, audio — need IronRDP virtual channels:
+  rdpdr / rdpsnd)
 - ✅ In-session file transfer — SFTP browser (upload/download/mkdir/delete) for
   SSH hosts (RDP drive redirect still planned)
 - ✅ Session recording — terminal sessions captured to an asciicast v2
@@ -40,10 +52,11 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ SSH (launch + embedded)
 - ✅ SFTP file browser
 - ✅ Telnet (embedded, IAC negotiation handled server-side)
-- ⏳ SPICE
+- ⏳ SPICE — needs a SPICE protocol client (no mature pure-Rust one yet);
+  large, tracked for a future milestone
 - ✅ Web/HTTP(S) console — opens a device's web admin UI in an in-app
   webview window (keeps the main window's CSP strict)
-- ⏳ RDP Gateway support
+- ⏳ RDP Gateway support — requires IronRDP gateway/proxy plumbing; tracked
 
 ## 3. Connection organization
 
@@ -67,7 +80,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Encrypted Stronghold vault (per-machine credentials + API token)
 - ✅ Manual vault lock
 - ✅ Auto-lock on idle
-- ⏳ Biometric unlock (Touch ID / Windows Hello / Android biometric)
+- ⏳ Biometric unlock (Touch ID / Windows Hello / Android biometric) — needs
+  native per-platform integration (mobile via tauri-plugin-biometric); tracked
 - ✅ Credential injection into embedded sessions (password / key passed directly)
 - ✅ External password-manager import (Bitwarden JSON · KeePass / 1Password /
   generic CSV → manual hosts + vault credentials)
