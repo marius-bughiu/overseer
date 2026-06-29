@@ -8,10 +8,12 @@ import {
   openVncSession,
   saveSettings,
   tailscaleCliAvailable,
+  wakeOnLan,
 } from "./api";
 import { vault } from "./vault";
 import {
   DEFAULT_SETTINGS,
+  type ConnectionProfile,
   type Device,
   type Protocol,
   type SessionTab,
@@ -86,6 +88,13 @@ interface AppStore {
   closeSession: (id: string) => void;
   setActiveTab: (id: string) => void;
   updateSession: (id: string, patch: Partial<SessionTab>) => void;
+
+  // per-device settings & extras
+  setDeviceMac: (deviceId: string, mac: string) => Promise<void>;
+  setProfile: (deviceId: string, profile: ConnectionProfile) => Promise<void>;
+  setGroup: (deviceId: string, group: string) => Promise<void>;
+  recordHistory: (device: Device, protocol: Protocol) => Promise<void>;
+  wake: (deviceId: string, mac: string, broadcast?: string) => Promise<void>;
 }
 
 let sessionSeq = 0;
@@ -253,6 +262,51 @@ export const useStore = create<AppStore>((set, get) => ({
         s.id === id ? { ...s, ...patch } : s,
       ),
     });
+  },
+
+  async setDeviceMac(deviceId, mac) {
+    const deviceMacs = { ...get().settings.deviceMacs };
+    if (mac.trim()) deviceMacs[deviceId] = mac.trim();
+    else delete deviceMacs[deviceId];
+    await get().updateSettings({ deviceMacs });
+  },
+
+  async setProfile(deviceId, profile) {
+    await get().updateSettings({
+      profiles: { ...get().settings.profiles, [deviceId]: profile },
+    });
+  },
+
+  async setGroup(deviceId, group) {
+    const groups = { ...get().settings.groups };
+    if (group.trim()) groups[deviceId] = group.trim();
+    else delete groups[deviceId];
+    await get().updateSettings({ groups });
+  },
+
+  async recordHistory(device, protocol) {
+    const entry = {
+      deviceId: device.id,
+      deviceName: device.name,
+      protocol,
+      at: Date.now(),
+    };
+    const history = [
+      entry,
+      ...get().settings.history.filter(
+        (h) => !(h.deviceId === device.id && h.protocol === protocol),
+      ),
+    ].slice(0, 25);
+    await get().updateSettings({ history });
+  },
+
+  async wake(_deviceId, mac, broadcast) {
+    try {
+      await wakeOnLan(mac, broadcast ?? null);
+      get().pushToast("success", `Sent wake packet to ${mac}`);
+    } catch (e) {
+      get().pushToast("error", `Wake failed: ${String(e)}`);
+    }
   },
 }));
 

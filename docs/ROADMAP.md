@@ -31,8 +31,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 ## 2. Protocols
 
 - ✅ RDP (launch / external client)
-- ✅ VNC (launch / external client)
-- 🚧 SSH (launch + embedded)
+- ✅ VNC (launch / external client + embedded)
+- ✅ SSH (launch + embedded)
 - ⏳ SFTP file browser
 - ⏳ Telnet, SPICE
 - ⏳ Web/HTTP(S) console tabs
@@ -41,15 +41,16 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 ## 3. Connection organization
 
 - ✅ Search, online/favorites filters, tags, favorites
-- 🚧 Per-machine **connection profiles** (protocol, port, resolution, redirects, gateway, username)
-- 🚧 Connection **history** & quick-reconnect
-- ⏳ Folder / tree grouping
+- ✅ Per-machine **connection profiles** (protocol, mode, port)
+- ✅ Connection **history** & quick-reconnect (per-session reconnect)
+- ✅ Folder / tree grouping
+- ⏳ Per-machine resolution / redirects / gateway in the profile
 - ⏳ Manual (non-Tailscale) hosts
 - ⏳ Import / export connections
 
 ## 4. Connectivity
 
-- 🚧 **Wake-on-LAN** (magic packet, routable via a tailnet peer)
+- ✅ **Wake-on-LAN** (magic packet, routable via a tailnet peer)
 - ⏳ Connection health / latency ping
 - ⏳ Port scan of a device
 - ⏳ Auto-reconnect on drop
@@ -58,7 +59,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 
 - ✅ Encrypted Stronghold vault (per-machine credentials + API token)
 - ✅ Manual vault lock
-- 🚧 Auto-lock on idle
+- ✅ Auto-lock on idle
 - ⏳ Biometric unlock (Touch ID / Windows Hello / Android biometric)
 - ⏳ Credential injection into embedded sessions (no manual typing)
 - ⏳ External password-manager import (KeePass / Bitwarden / 1Password)

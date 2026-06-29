@@ -10,6 +10,7 @@ import {
 
 import { openUrl } from "@tauri-apps/plugin-opener";
 
+import { relativeTime } from "../lib/devices";
 import { useStore } from "../lib/store";
 import type { DiscoveryMethod } from "../lib/types";
 import { VaultGate } from "./VaultGate";
@@ -24,6 +25,8 @@ export function Settings() {
   const apiToken = useStore((s) => s.apiToken);
   const setApiToken = useStore((s) => s.setApiToken);
   const pushToast = useStore((s) => s.pushToast);
+  const autoLockMinutes = useStore((s) => s.settings.autoLockMinutes);
+  const history = useStore((s) => s.settings.history);
 
   const [gateOpen, setGateOpen] = useState(false);
   const isMobile = platform === "android" || platform === "ios";
@@ -164,6 +167,26 @@ export function Settings() {
             </button>
           )}
         </div>
+
+        <div className="mt-4">
+          <label className="label" htmlFor="autolock">
+            Auto-lock after inactivity
+          </label>
+          <select
+            id="autolock"
+            className="input"
+            value={autoLockMinutes}
+            onChange={(e) =>
+              void updateSettings({ autoLockMinutes: Number(e.target.value) })
+            }
+          >
+            <option value={0}>Never</option>
+            <option value={5}>5 minutes</option>
+            <option value={15}>15 minutes</option>
+            <option value={30}>30 minutes</option>
+            <option value={60}>1 hour</option>
+          </select>
+        </div>
       </section>
 
       <section className="card p-5">
@@ -189,6 +212,32 @@ export function Settings() {
           </li>
         </ul>
       </section>
+
+      {history.length > 0 && (
+        <section className="card p-5">
+          <h2 className="text-sm font-semibold text-slate-100">
+            Recent connections
+          </h2>
+          <ul className="mt-3 divide-y divide-ink-800 text-sm">
+            {history.slice(0, 10).map((h) => (
+              <li
+                key={`${h.deviceId}-${h.protocol}-${h.at}`}
+                className="flex items-center justify-between py-2"
+              >
+                <span className="text-slate-200">
+                  {h.deviceName}
+                  <span className="ml-2 text-xs uppercase text-slate-500">
+                    {h.protocol}
+                  </span>
+                </span>
+                <span className="text-xs text-slate-500">
+                  {relativeTime(new Date(h.at).toISOString()) ?? ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {gateOpen && <VaultGate onClose={() => setGateOpen(false)} />}
     </div>

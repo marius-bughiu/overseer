@@ -28,6 +28,7 @@ export function DeviceList() {
   const refresh = useStore((s) => s.refresh);
   const devices = useStore((s) => s.devices);
   const favorites = useStore((s) => s.settings.favorites);
+  const groups = useStore((s) => s.settings.groups);
   const total = devices.length;
   const onlineCount = useMemo(
     () => devices.filter((d) => d.online).length,
@@ -37,6 +38,22 @@ export function DeviceList() {
     () => filterDevices(devices, search, filter, favorites),
     [devices, search, filter, favorites],
   );
+
+  // Group visible devices into folders when any folders are defined.
+  const grouped = useMemo(() => {
+    const hasGroups = Object.keys(groups).length > 0;
+    if (!hasGroups) return null;
+    const map = new Map<string, Device[]>();
+    for (const d of visible) {
+      const key = groups[d.id] ?? "Ungrouped";
+      (map.get(key) ?? map.set(key, []).get(key)!).push(d);
+    }
+    return [...map.entries()].sort(([a], [b]) => {
+      if (a === "Ungrouped") return 1;
+      if (b === "Ungrouped") return -1;
+      return a.localeCompare(b);
+    });
+  }, [visible, groups]);
 
   const [connecting, setConnecting] = useState<Device | null>(null);
 
@@ -117,6 +134,26 @@ export function DeviceList() {
                 : "No machines match your search or filter."}
             </p>
           </CenteredState>
+        ) : grouped ? (
+          <div className="space-y-6">
+            {grouped.map(([name, items]) => (
+              <section key={name}>
+                <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {name}
+                  <span className="text-slate-600">({items.length})</span>
+                </h3>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {items.map((device) => (
+                    <DeviceCard
+                      key={device.id}
+                      device={device}
+                      onConnect={setConnecting}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visible.map((device) => (

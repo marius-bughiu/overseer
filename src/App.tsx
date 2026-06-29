@@ -32,6 +32,9 @@ export default function App() {
   const sessions = useStore((s) => s.sessions);
   const activeTab = useStore((s) => s.activeTab);
   const setActiveTab = useStore((s) => s.setActiveTab);
+  const lockVault = useStore((s) => s.lockVault);
+  const pushToast = useStore((s) => s.pushToast);
+  const autoLockMinutes = useStore((s) => s.settings.autoLockMinutes);
 
   const activeSession = sessions.find((s) => s.id === activeTab) ?? null;
   const showingSession = activeTab !== "devices" && activeSession !== null;
@@ -54,6 +57,26 @@ export default function App() {
     if (ready) void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.discoveryMethod, apiToken, refresh]);
+
+  // Auto-lock the vault after a period of inactivity.
+  useEffect(() => {
+    if (!vaultUnlocked || autoLockMinutes <= 0) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        lockVault();
+        pushToast("info", "Vault auto-locked after inactivity.");
+      }, autoLockMinutes * 60_000);
+    };
+    const events = ["mousedown", "keydown", "touchstart", "mousemove"];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [vaultUnlocked, autoLockMinutes, lockVault, pushToast]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-ink-950">

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { ExternalLink, Loader2, MonitorPlay, Save } from "lucide-react";
+import { ExternalLink, Loader2, MonitorPlay, Power, Save } from "lucide-react";
 
 import { launchConnection } from "../lib/api";
 import { primaryAddress } from "../lib/devices";
@@ -28,20 +28,33 @@ export function ConnectDialog({
   onClose: () => void;
 }) {
   const preferred = useStore((s) => s.settings.preferredProtocol);
+  const profile = useStore((s) => s.settings.profiles[device.id]);
+  const savedMac = useStore((s) => s.settings.deviceMacs[device.id] ?? "");
+  const savedGroup = useStore((s) => s.settings.groups[device.id] ?? "");
   const updateSettings = useStore((s) => s.updateSettings);
   const vaultUnlocked = useStore((s) => s.vaultUnlocked);
   const pushToast = useStore((s) => s.pushToast);
   const openSession = useStore((s) => s.openSession);
+  const setProfile = useStore((s) => s.setProfile);
+  const setDeviceMac = useStore((s) => s.setDeviceMac);
+  const setGroup = useStore((s) => s.setGroup);
+  const recordHistory = useStore((s) => s.recordHistory);
+  const wake = useStore((s) => s.wake);
 
-  const [protocol, setProtocol] = useState<Protocol>(preferred);
+  const initialProtocol = profile?.protocol ?? preferred;
+  const [protocol, setProtocol] = useState<Protocol>(initialProtocol);
   const [host, setHost] = useState(primaryAddress(device));
-  const [port, setPort] = useState<number>(DEFAULT_PORT[preferred]);
+  const [port, setPort] = useState<number>(
+    profile?.port ?? DEFAULT_PORT[initialProtocol],
+  );
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [saveCreds, setSaveCreds] = useState(false);
   const [busy, setBusy] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
-  const [mode, setMode] = useState<Mode>("app");
+  const [mode, setMode] = useState<Mode>(profile?.mode ?? "app");
+  const [mac, setMac] = useState(savedMac);
+  const [group, setGroupValue] = useState(savedGroup);
 
   const embeddable = EMBEDDABLE.includes(protocol);
   const effectiveMode: Mode = embeddable ? mode : "external";
@@ -82,6 +95,10 @@ export function ConnectDialog({
         await vault.setCredential(device.id, { username, password, port });
       }
       await updateSettings({ preferredProtocol: protocol });
+      // Remember this device's connection profile, folder and history.
+      await setProfile(device.id, { protocol, mode: effectiveMode, port });
+      if (group !== savedGroup) await setGroup(device.id, group);
+      await recordHistory(device, protocol);
 
       if (effectiveMode === "app") {
         // Embedded, in-app session (tabbed).
@@ -285,6 +302,49 @@ export function ConnectDialog({
           <Save size={15} className="text-slate-400" />
           Remember these credentials for {device.name}
         </label>
+
+        <div>
+          <label className="label" htmlFor="folder">
+            Folder <span className="text-slate-500">(optional)</span>
+          </label>
+          <input
+            id="folder"
+            className="input"
+            value={group}
+            onChange={(e) => setGroupValue(e.target.value)}
+            placeholder="e.g. Work, Home lab"
+          />
+        </div>
+
+        <div>
+          <label className="label" htmlFor="mac">
+            Wake-on-LAN
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="mac"
+              className="input font-mono"
+              value={mac}
+              onChange={(e) => setMac(e.target.value)}
+              placeholder="AA:BB:CC:DD:EE:FF"
+            />
+            <button
+              type="button"
+              className="btn-ghost shrink-0"
+              disabled={!mac.trim()}
+              onClick={() => {
+                void setDeviceMac(device.id, mac);
+                void wake(device.id, mac.trim());
+              }}
+            >
+              <Power size={15} /> Wake
+            </button>
+          </div>
+          <p className="mt-1.5 text-xs text-slate-500">
+            Sent over your network (and any tailnet subnet router) to power on a
+            sleeping machine.
+          </p>
+        </div>
       </form>
     </Modal>
   );

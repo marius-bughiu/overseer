@@ -26,6 +26,23 @@ export interface LaunchParams {
   label: string;
 }
 
+export type ConnectMode = "app" | "external";
+
+/** A remembered per-machine connection profile (non-secret). */
+export interface ConnectionProfile {
+  protocol: Protocol;
+  mode: ConnectMode;
+  port?: number | null;
+}
+
+/** A connection-history entry. */
+export interface HistoryEntry {
+  deviceId: string;
+  deviceName: string;
+  protocol: Protocol;
+  at: number;
+}
+
 /** Non-secret settings, persisted to disk via the backend. */
 export interface Settings {
   discoveryMethod: DiscoveryMethod;
@@ -34,6 +51,16 @@ export interface Settings {
   preferredProtocol: Protocol;
   /** Remember which devices the user starred. */
   favorites: string[];
+  /** Auto-lock the vault after this many minutes idle (0 = never). */
+  autoLockMinutes: number;
+  /** Per-device MAC addresses for Wake-on-LAN. */
+  deviceMacs: Record<string, string>;
+  /** Per-device remembered connection profiles. */
+  profiles: Record<string, ConnectionProfile>;
+  /** Folder/group label per device. */
+  groups: Record<string, string>;
+  /** Recently-used connections, newest first. */
+  history: HistoryEntry[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -41,6 +68,11 @@ export const DEFAULT_SETTINGS: Settings = {
   tailnet: "-",
   preferredProtocol: "rdp",
   favorites: [],
+  autoLockMinutes: 15,
+  deviceMacs: {},
+  profiles: {},
+  groups: {},
+  history: [],
 };
 
 /** A credential entry as stored in the Stronghold vault. */
