@@ -8,6 +8,7 @@ import {
   openSshSession,
   openVncSession,
   saveSettings,
+  sftp,
   tailscaleCliAvailable,
   wakeOnLan,
 } from "./api";
@@ -86,6 +87,7 @@ interface AppStore {
 
   // embedded sessions
   openSession: (args: OpenSessionArgs) => Promise<void>;
+  openFiles: (args: OpenSessionArgs) => Promise<void>;
   closeSession: (id: string) => void;
   setActiveTab: (id: string) => void;
   updateSession: (id: string, patch: Partial<SessionTab>) => void;
@@ -213,6 +215,7 @@ export const useStore = create<AppStore>((set, get) => ({
       id,
       title: args.title,
       protocol: args.protocol,
+      kind: "screen",
       host: args.host,
       port: args.port,
       username: args.username ?? null,
@@ -253,7 +256,37 @@ export const useStore = create<AppStore>((set, get) => ({
     }
   },
 
+  async openFiles(args) {
+    const id = `session-${++sessionSeq}`;
+    const tab: SessionTab = {
+      id,
+      title: `${args.title} · files`,
+      protocol: "ssh",
+      kind: "files",
+      host: args.host,
+      port: args.port,
+      username: args.username ?? null,
+      password: args.password ?? null,
+      status: "connecting",
+    };
+    set({ sessions: [...get().sessions, tab], activeTab: id });
+    try {
+      const sftpId = await sftp.connect({
+        host: args.host,
+        port: args.port,
+        username: args.username ?? "",
+        password: args.password ?? "",
+      });
+      get().updateSession(id, { sftpId, status: "open" });
+    } catch (e) {
+      get().updateSession(id, { status: "error", error: String(e) });
+      get().pushToast("error", `Could not open files: ${String(e)}`);
+    }
+  },
+
   closeSession(id) {
+    const session = get().sessions.find((s) => s.id === id);
+    if (session?.sftpId) void sftp.disconnect(session.sftpId);
     const remaining = get().sessions.filter((s) => s.id !== id);
     const wasActive = get().activeTab === id;
     set({

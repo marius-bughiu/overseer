@@ -1,4 +1,4 @@
-import { Monitor, TerminalSquare, X } from "lucide-react";
+import { FolderOpen, Monitor, TerminalSquare, X } from "lucide-react";
 
 import { useStore } from "../lib/store";
 import type { SessionTab } from "../lib/types";
@@ -53,7 +53,9 @@ export function SessionTabs() {
             <span
               className={`h-1.5 w-1.5 rounded-full ${statusDot(s.status)}`}
             />
-            {s.protocol === "ssh" ? (
+            {s.kind === "files" ? (
+              <FolderOpen size={13} />
+            ) : s.protocol === "ssh" ? (
               <TerminalSquare size={13} />
             ) : (
               <Monitor size={13} />

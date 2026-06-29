@@ -147,6 +147,93 @@ pub fn host_platform() -> &'static str {
     }
 }
 
+// --- SFTP file transfer ---
+
+/// Open an SFTP session; returns an opaque session id.
+#[tauri::command]
+pub async fn sftp_connect(
+    state: tauri::State<'_, AppState>,
+    host: String,
+    port: u16,
+    username: String,
+    password: String,
+) -> Result<String> {
+    state.sftp.connect(&host, port, &username, password).await
+}
+
+/// List a remote directory.
+#[tauri::command]
+pub async fn sftp_list(
+    state: tauri::State<'_, AppState>,
+    id: String,
+    path: String,
+) -> Result<Vec<crate::sftp::SftpFile>> {
+    state.sftp.list(&id, &path).await
+}
+
+/// Resolve the home / starting directory for the session.
+#[tauri::command]
+pub async fn sftp_home(state: tauri::State<'_, AppState>, id: String) -> Result<String> {
+    state.sftp.home(&id).await
+}
+
+/// Download a remote file to a local path.
+#[tauri::command]
+pub async fn sftp_download(
+    state: tauri::State<'_, AppState>,
+    id: String,
+    remote: String,
+    local: String,
+) -> Result<()> {
+    state.sftp.download(&id, &remote, &local).await
+}
+
+/// Upload a local file to a remote path.
+#[tauri::command]
+pub async fn sftp_upload(
+    state: tauri::State<'_, AppState>,
+    id: String,
+    local: String,
+    remote: String,
+) -> Result<()> {
+    state.sftp.upload(&id, &local, &remote).await
+}
+
+/// Create a remote directory.
+#[tauri::command]
+pub async fn sftp_mkdir(state: tauri::State<'_, AppState>, id: String, path: String) -> Result<()> {
+    state.sftp.make_dir(&id, &path).await
+}
+
+/// Remove a remote file or directory.
+#[tauri::command]
+pub async fn sftp_remove(
+    state: tauri::State<'_, AppState>,
+    id: String,
+    path: String,
+    is_dir: bool,
+) -> Result<()> {
+    state.sftp.remove(&id, &path, is_dir).await
+}
+
+/// Rename / move a remote path.
+#[tauri::command]
+pub async fn sftp_rename(
+    state: tauri::State<'_, AppState>,
+    id: String,
+    from: String,
+    to: String,
+) -> Result<()> {
+    state.sftp.rename(&id, &from, &to).await
+}
+
+/// Close an SFTP session.
+#[tauri::command]
+pub async fn sftp_disconnect(state: tauri::State<'_, AppState>, id: String) -> Result<()> {
+    state.sftp.disconnect(&id).await;
+    Ok(())
+}
+
 /// Persist non-secret app settings (the secret vault is handled separately by
 /// the Stronghold plugin on the frontend).
 #[tauri::command]

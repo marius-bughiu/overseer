@@ -24,7 +24,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ⏳ Full-screen & detached-window sessions
 - ⏳ Multi-monitor (RDP) & dynamic resolution / scaling
 - ⏳ Device & resource redirection (clipboard, drives, printers, audio)
-- ⏳ In-session file transfer (SFTP for SSH, drive redirect for RDP)
+- ✅ In-session file transfer — SFTP browser (upload/download/mkdir/delete) for
+  SSH hosts (RDP drive redirect still planned)
 - ⏳ Session recording (audit/training)
 - ⏳ Input automation: key-sequence & command tasks, paste-as-keystrokes
 
@@ -33,7 +34,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ RDP (launch / external client + embedded)
 - ✅ VNC (launch / external client + embedded)
 - ✅ SSH (launch + embedded)
-- ⏳ SFTP file browser
+- ✅ SFTP file browser
 - ⏳ Telnet, SPICE
 - ⏳ Web/HTTP(S) console tabs
 - ⏳ RDP Gateway support

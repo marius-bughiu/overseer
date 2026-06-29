@@ -61,6 +61,7 @@ sspi = { version = "0.18", features = ["network_client"] }
 tokio-rustls = "0.26"
 x509-cert = "0.2"
 bytes = "1"
+russh-sftp = "2.3.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"

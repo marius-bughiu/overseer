@@ -3,6 +3,7 @@ import { Loader2, RefreshCw, X } from "lucide-react";
 
 import { useStore } from "../lib/store";
 import type { SessionStatus, SessionTab } from "../lib/types";
+import { FileBrowser } from "./FileBrowser";
 import { RdpViewer } from "./RdpViewer";
 import { SshTerminal } from "./SshTerminal";
 import { VncViewer } from "./VncViewer";
@@ -25,6 +26,7 @@ export function SessionHost({ session }: { session: SessionTab }) {
   const updateSession = useStore((s) => s.updateSession);
   const closeSession = useStore((s) => s.closeSession);
   const openSession = useStore((s) => s.openSession);
+  const openFiles = useStore((s) => s.openFiles);
 
   const onStatus = useCallback(
     (status: SessionStatus) => updateSession(session.id, { status }),
@@ -33,14 +35,16 @@ export function SessionHost({ session }: { session: SessionTab }) {
 
   async function reconnect() {
     closeSession(session.id);
-    await openSession({
-      title: session.title,
+    const args = {
+      title: session.title.replace(/ · files$/, ""),
       protocol: session.protocol,
       host: session.host,
       port: session.port,
       username: session.username,
       password: session.password,
-    });
+    };
+    if (session.kind === "files") await openFiles(args);
+    else await openSession(args);
   }
 
   return (
@@ -84,6 +88,14 @@ export function SessionHost({ session }: { session: SessionTab }) {
               <RefreshCw size={15} /> Retry
             </button>
           </div>
+        ) : session.kind === "files" ? (
+          session.sftpId ? (
+            <FileBrowser session={session} />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <Loader2 size={24} className="animate-spin text-brand-400" />
+            </div>
+          )
         ) : !session.wsUrl ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 size={24} className="animate-spin text-brand-400" />

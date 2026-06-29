@@ -71,6 +71,51 @@ export function tcpPing(host: string, port: number): Promise<number | null> {
   return invoke("tcp_ping", { host, port });
 }
 
+// --- SFTP file transfer ---
+
+export interface SftpFile {
+  name: string;
+  path: string;
+  isDir: boolean;
+  size: number;
+  modified: number | null;
+}
+
+export const sftp = {
+  connect(args: {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+  }): Promise<string> {
+    return invoke("sftp_connect", args);
+  },
+  list(id: string, path: string): Promise<SftpFile[]> {
+    return invoke("sftp_list", { id, path });
+  },
+  home(id: string): Promise<string> {
+    return invoke("sftp_home", { id });
+  },
+  download(id: string, remote: string, local: string): Promise<void> {
+    return invoke("sftp_download", { id, remote, local });
+  },
+  upload(id: string, local: string, remote: string): Promise<void> {
+    return invoke("sftp_upload", { id, local, remote });
+  },
+  mkdir(id: string, path: string): Promise<void> {
+    return invoke("sftp_mkdir", { id, path });
+  },
+  remove(id: string, path: string, isDir: boolean): Promise<void> {
+    return invoke("sftp_remove", { id, path, isDir });
+  },
+  rename(id: string, from: string, to: string): Promise<void> {
+    return invoke("sftp_rename", { id, from, to });
+  },
+  disconnect(id: string): Promise<void> {
+    return invoke("sftp_disconnect", { id });
+  },
+};
+
 /** The OS family Overseer is running on. */
 export function hostPlatform(): Promise<
   "android" | "ios" | "windows" | "macos" | "linux"

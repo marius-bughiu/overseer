@@ -11,6 +11,7 @@ mod error;
 mod launcher;
 mod rdp;
 mod session;
+mod sftp;
 mod wol;
 
 use std::path::PathBuf;
@@ -20,15 +21,18 @@ use error::{AppError, Result};
 use tauri::Manager;
 
 /// Application state managed by Tauri. Holds the on-disk location of the
-/// non-secret settings file (secrets live in the Stronghold vault instead).
+/// non-secret settings file (secrets live in the Stronghold vault instead) and
+/// the registry of open SFTP sessions.
 pub struct AppState {
     settings_path: Mutex<Option<PathBuf>>,
+    pub sftp: sftp::Registry,
 }
 
 impl AppState {
     fn new() -> Self {
         Self {
             settings_path: Mutex::new(None),
+            sftp: sftp::Registry::default(),
         }
     }
 
@@ -115,6 +119,15 @@ pub fn run() {
             commands::open_rdp_session,
             commands::wake_on_lan,
             commands::tcp_ping,
+            commands::sftp_connect,
+            commands::sftp_list,
+            commands::sftp_home,
+            commands::sftp_download,
+            commands::sftp_upload,
+            commands::sftp_mkdir,
+            commands::sftp_remove,
+            commands::sftp_rename,
+            commands::sftp_disconnect,
             commands::host_platform,
             commands::save_settings,
             commands::load_settings,

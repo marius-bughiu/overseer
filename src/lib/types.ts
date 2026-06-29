@@ -86,16 +86,22 @@ export interface Credential {
 
 export type SessionStatus = "connecting" | "open" | "error" | "closed";
 
+/** What kind of view a session tab renders. */
+export type SessionKind = "screen" | "files";
+
 /** An open, embedded (in-app) session tab. */
 export interface SessionTab {
   id: string;
   title: string;
-  protocol: Protocol; // "vnc" | "ssh" — embedded protocols
+  protocol: Protocol; // "rdp" | "vnc" | "ssh"
+  kind: SessionKind;
   host: string;
   port: number;
   username?: string | null;
   password?: string | null;
   wsUrl?: string;
+  /** For kind === "files": the SFTP session id. */
+  sftpId?: string;
   status: SessionStatus;
   error?: string;
 }

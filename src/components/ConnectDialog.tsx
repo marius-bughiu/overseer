@@ -1,5 +1,12 @@
 import { FormEvent, useEffect, useState } from "react";
-import { ExternalLink, Loader2, MonitorPlay, Power, Save } from "lucide-react";
+import {
+  ExternalLink,
+  FolderOpen,
+  Loader2,
+  MonitorPlay,
+  Power,
+  Save,
+} from "lucide-react";
 
 import { launchConnection } from "../lib/api";
 import { primaryAddress } from "../lib/devices";
@@ -35,6 +42,7 @@ export function ConnectDialog({
   const vaultUnlocked = useStore((s) => s.vaultUnlocked);
   const pushToast = useStore((s) => s.pushToast);
   const openSession = useStore((s) => s.openSession);
+  const openFiles = useStore((s) => s.openFiles);
   const setProfile = useStore((s) => s.setProfile);
   const setDeviceMac = useStore((s) => s.setDeviceMac);
   const setGroup = useStore((s) => s.setGroup);
@@ -136,6 +144,25 @@ export function ConnectDialog({
     void doConnect();
   }
 
+  async function browseFiles() {
+    setBusy(true);
+    try {
+      await openFiles({
+        title: device.name,
+        protocol: "ssh",
+        host: host.trim(),
+        port: protocol === "ssh" ? port : 22,
+        username: username.trim() || null,
+        password: password || null,
+      });
+      onClose();
+    } catch (err) {
+      pushToast("error", String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (gateOpen) {
     return (
       <VaultGate
@@ -159,6 +186,16 @@ export function ConnectDialog({
           <button className="btn-ghost" onClick={onClose} disabled={busy}>
             Cancel
           </button>
+          {protocol === "ssh" && (
+            <button
+              className="btn-ghost"
+              onClick={() => void browseFiles()}
+              disabled={busy}
+              title="Open an SFTP file browser"
+            >
+              <FolderOpen size={15} /> Files
+            </button>
+          )}
           <button
             className="btn-primary"
             onClick={() => void doConnect()}
