@@ -13,8 +13,8 @@
 //! `rdp://` / `vnc://` URI schemes, so opening the URI deep-links into them.
 
 use overseer_core::{
-    build_rdp_file, build_rdp_uri, build_ssh_uri, build_vnc_uri, rdp_file_name, ConnectionRequest,
-    Protocol,
+    build_rdp_file, build_rdp_uri, build_ssh_uri, build_telnet_uri, build_vnc_uri, rdp_file_name,
+    ConnectionRequest, Protocol,
 };
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
@@ -40,6 +40,7 @@ pub fn launch(app: &AppHandle, req: &ConnectionRequest) -> Result<LaunchOutcome>
         Protocol::Rdp => open_rdp_file(app, req),
         Protocol::Vnc => open_uri(app, build_vnc_uri(req)?),
         Protocol::Ssh => open_uri(app, build_ssh_uri(req)?),
+        Protocol::Telnet => open_uri(app, build_telnet_uri(req)?),
     }
 }
 

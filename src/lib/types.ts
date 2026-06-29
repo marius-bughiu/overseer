@@ -22,7 +22,7 @@ export interface Device {
   source: DiscoverySource;
 }
 
-export type Protocol = "rdp" | "vnc" | "ssh";
+export type Protocol = "rdp" | "vnc" | "ssh" | "telnet";
 
 export type DiscoveryMethod = "cli" | "api";
 
@@ -120,7 +120,7 @@ export type SessionKind = "screen" | "files";
 export interface SessionTab {
   id: string;
   title: string;
-  protocol: Protocol; // "rdp" | "vnc" | "ssh"
+  protocol: Protocol; // "rdp" | "vnc" | "ssh" | "telnet"
   kind: SessionKind;
   host: string;
   port: number;

@@ -12,6 +12,7 @@ const DEFAULT_PORT: Record<Protocol, number> = {
   rdp: 3389,
   vnc: 5900,
   ssh: 22,
+  telnet: 23,
 };
 
 export function DeviceCard({

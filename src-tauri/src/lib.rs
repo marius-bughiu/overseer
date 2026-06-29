@@ -126,6 +126,7 @@ pub fn run() {
             commands::launch_connection,
             commands::open_vnc_session,
             commands::open_ssh_session,
+            commands::open_telnet_session,
             commands::open_rdp_session,
             commands::wake_on_lan,
             commands::tcp_ping,

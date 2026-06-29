@@ -55,7 +55,7 @@ export function SessionTabs() {
             />
             {s.kind === "files" ? (
               <FolderOpen size={13} />
-            ) : s.protocol === "ssh" ? (
+            ) : s.protocol === "ssh" || s.protocol === "telnet" ? (
               <TerminalSquare size={13} />
             ) : (
               <Monitor size={13} />

@@ -109,6 +109,13 @@ pub async fn open_ssh_session(
     .await
 }
 
+/// Open an embedded **Telnet** session bridge (terminal over a raw TCP bridge
+/// with IAC negotiation handled server-side). Returns the loopback ws URL.
+#[tauri::command]
+pub async fn open_telnet_session(host: String, port: u16) -> Result<String> {
+    session::open_telnet(host, port).await
+}
+
 /// Open an embedded **RDP** session bridge. Returns the loopback WebSocket URL
 /// the frontend's canvas renderer should connect to.
 #[allow(clippy::too_many_arguments)]

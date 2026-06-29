@@ -20,10 +20,11 @@ const DEFAULT_PORT: Record<Protocol, number> = {
   rdp: 3389,
   vnc: 5900,
   ssh: 22,
+  telnet: 23,
 };
 
 /** All protocols can now render in an embedded, in-app tab. */
-const EMBEDDABLE: Protocol[] = ["rdp", "vnc", "ssh"];
+const EMBEDDABLE: Protocol[] = ["rdp", "vnc", "ssh", "telnet"];
 
 type Mode = "app" | "external";
 
@@ -236,8 +237,8 @@ export function ConnectDialog({
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <span className="label">Protocol</span>
-          <div className="grid grid-cols-3 gap-2">
-            {(["rdp", "vnc", "ssh"] as Protocol[]).map((p) => (
+          <div className="grid grid-cols-4 gap-2">
+            {(["rdp", "vnc", "ssh", "telnet"] as Protocol[]).map((p) => (
               <button
                 key={p}
                 type="button"

@@ -13,6 +13,7 @@ import {
   loadSettings,
   openRdpSession,
   openSshSession,
+  openTelnetSession,
   openVncSession,
   saveSettings,
   sftp,
@@ -38,6 +39,8 @@ export function applyTheme(theme: Theme) {
 /** Open the backend bridge for an embedded (screen) protocol; returns ws URL. */
 async function connectProtocol(args: OpenSessionArgs): Promise<string> {
   if (args.protocol === "vnc") return openVncSession(args.host, args.port);
+  if (args.protocol === "telnet")
+    return openTelnetSession(args.host, args.port);
   if (args.protocol === "ssh")
     return openSshSession({
       host: args.host,

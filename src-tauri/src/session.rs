@@ -159,6 +159,114 @@ async fn bridge_ws_tcp(
 }
 
 // ---------------------------------------------------------------------------
+// Telnet: raw bridge with minimal IAC negotiation
+// ---------------------------------------------------------------------------
+
+const IAC: u8 = 255;
+const DONT: u8 = 254;
+const DO: u8 = 253;
+const WONT: u8 = 252;
+const WILL: u8 = 251;
+const SB: u8 = 250;
+const SE: u8 = 240;
+
+/// Open an embedded Telnet bridge. Telnet IAC negotiation is handled here (we
+/// refuse all options) and stripped from the stream sent to the terminal; the
+/// frontend renders it with xterm.js like SSH.
+pub async fn open_telnet(host: String, port: u16) -> Result<String> {
+    let (listener, token, url) = bind_loopback().await?;
+    tokio::spawn(async move {
+        let Some(ws) = accept_ws(listener, token).await else {
+            return;
+        };
+        let tcp = match tokio::net::TcpStream::connect((host.as_str(), port)).await {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        bridge_telnet(ws, tcp).await;
+    });
+    Ok(url)
+}
+
+async fn bridge_telnet(
+    ws: tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>,
+    tcp: tokio::net::TcpStream,
+) {
+    let (mut ws_tx, mut ws_rx) = ws.split();
+    let (mut tcp_rd, tcp_wr) = tcp.into_split();
+    // The write half is shared: the reader task writes IAC replies, the input
+    // task writes keystrokes.
+    let tcp_wr = std::sync::Arc::new(tokio::sync::Mutex::new(tcp_wr));
+
+    // remote -> frontend, filtering/answering IAC negotiation.
+    let reply_wr = tcp_wr.clone();
+    let to_ws = tokio::spawn(async move {
+        let mut buf = vec![0u8; 16 * 1024];
+        loop {
+            let n = match tcp_rd.read(&mut buf).await {
+                Ok(0) | Err(_) => break,
+                Ok(n) => n,
+            };
+            let mut clean = Vec::with_capacity(n);
+            let mut replies = Vec::new();
+            let mut i = 0;
+            while i < n {
+                if buf[i] == IAC && i + 1 < n {
+                    match buf[i + 1] {
+                        WILL | WONT if i + 2 < n => {
+                            replies.extend_from_slice(&[IAC, DONT, buf[i + 2]]);
+                            i += 3;
+                        }
+                        DO | DONT if i + 2 < n => {
+                            replies.extend_from_slice(&[IAC, WONT, buf[i + 2]]);
+                            i += 3;
+                        }
+                        SB => {
+                            i += 2;
+                            while i + 1 < n && !(buf[i] == IAC && buf[i + 1] == SE) {
+                                i += 1;
+                            }
+                            i += 2;
+                        }
+                        IAC => {
+                            clean.push(IAC);
+                            i += 2;
+                        }
+                        _ => i += 2,
+                    }
+                } else {
+                    clean.push(buf[i]);
+                    i += 1;
+                }
+            }
+            if !replies.is_empty() {
+                let _ = reply_wr.lock().await.write_all(&replies).await;
+            }
+            if !clean.is_empty() && ws_tx.send(Message::Binary(clean)).await.is_err() {
+                break;
+            }
+        }
+    });
+
+    // frontend -> remote (keystrokes).
+    let to_tcp = tokio::spawn(async move {
+        while let Some(Ok(msg)) = ws_rx.next().await {
+            match msg {
+                Message::Binary(b) => {
+                    if tcp_wr.lock().await.write_all(&b).await.is_err() {
+                        break;
+                    }
+                }
+                Message::Close(_) => break,
+                _ => {}
+            }
+        }
+    });
+
+    let _ = tokio::join!(to_ws, to_tcp);
+}
+
+// ---------------------------------------------------------------------------
 // RDP: drive IronRDP on a thread, stream the framebuffer
 // ---------------------------------------------------------------------------
 

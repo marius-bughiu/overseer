@@ -35,7 +35,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ VNC (launch / external client + embedded)
 - ✅ SSH (launch + embedded)
 - ✅ SFTP file browser
-- ⏳ Telnet, SPICE
+- ✅ Telnet (embedded, IAC negotiation handled server-side)
+- ⏳ SPICE
 - ⏳ Web/HTTP(S) console tabs
 - ⏳ RDP Gateway support
 

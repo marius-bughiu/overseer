@@ -26,6 +26,8 @@ pub const DEFAULT_RDP_PORT: u16 = 3389;
 pub const DEFAULT_VNC_PORT: u16 = 5900;
 /// Default TCP port for SSH.
 pub const DEFAULT_SSH_PORT: u16 = 22;
+/// Default TCP port for Telnet.
+pub const DEFAULT_TELNET_PORT: u16 = 23;
 
 /// The remote-access protocol to use for a connection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -37,6 +39,8 @@ pub enum Protocol {
     Vnc,
     /// Secure Shell.
     Ssh,
+    /// Telnet (legacy, unencrypted).
+    Telnet,
 }
 
 impl Protocol {
@@ -46,12 +50,13 @@ impl Protocol {
             Protocol::Rdp => DEFAULT_RDP_PORT,
             Protocol::Vnc => DEFAULT_VNC_PORT,
             Protocol::Ssh => DEFAULT_SSH_PORT,
+            Protocol::Telnet => DEFAULT_TELNET_PORT,
         }
     }
 
     /// Whether Overseer can render this protocol in an embedded, in-app tab.
     pub fn supports_embedded(self) -> bool {
-        matches!(self, Protocol::Vnc | Protocol::Ssh)
+        matches!(self, Protocol::Vnc | Protocol::Ssh | Protocol::Telnet)
     }
 }
 
@@ -189,6 +194,18 @@ pub fn build_ssh_uri(req: &ConnectionRequest) -> Result<String> {
     Ok(format!("ssh://{authority}:{}", req.port))
 }
 
+/// Build a `telnet://[user@]host:port` URL for an external client.
+pub fn build_telnet_uri(req: &ConnectionRequest) -> Result<String> {
+    if req.protocol != Protocol::Telnet {
+        return Err(CoreError::MissingField("telnet protocol"));
+    }
+    let authority = match &req.username {
+        Some(user) => format!("{}@{}", percent_encode(user), req.host),
+        None => req.host.clone(),
+    };
+    Ok(format!("telnet://{authority}:{}", req.port))
+}
+
 /// A suggested file name (without directory) for the `.rdp` artifact.
 pub fn rdp_file_name(req: &ConnectionRequest) -> String {
     let safe: String = req
@@ -313,6 +330,13 @@ mod tests {
         assert_eq!(Protocol::Rdp.default_port(), 3389);
         assert_eq!(Protocol::Vnc.default_port(), 5900);
         assert_eq!(Protocol::Ssh.default_port(), 22);
+        assert_eq!(Protocol::Telnet.default_port(), 23);
+    }
+
+    #[test]
+    fn telnet_uri_builds() {
+        let req = ConnectionRequest::new(Protocol::Telnet, "10.0.0.1", 23, None, "Sw").unwrap();
+        assert_eq!(build_telnet_uri(&req).unwrap(), "telnet://10.0.0.1:23");
     }
 
     #[test]

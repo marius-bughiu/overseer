@@ -118,7 +118,7 @@ export function SessionHost({ session }: { session: SessionTab }) {
           <div className="flex h-full items-center justify-center">
             <Loader2 size={24} className="animate-spin text-brand-400" />
           </div>
-        ) : session.protocol === "ssh" ? (
+        ) : session.protocol === "ssh" || session.protocol === "telnet" ? (
           <SshTerminal wsUrl={session.wsUrl} onStatus={onStatus} />
         ) : session.protocol === "rdp" ? (
           <RdpViewer wsUrl={session.wsUrl} onStatus={onStatus} />

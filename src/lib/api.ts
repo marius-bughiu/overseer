@@ -46,6 +46,11 @@ export function openSshSession(args: {
   });
 }
 
+/** Open an embedded Telnet bridge; returns the loopback WebSocket URL for xterm. */
+export function openTelnetSession(host: string, port: number): Promise<string> {
+  return invoke<string>("open_telnet_session", { host, port });
+}
+
 /** Open an embedded RDP bridge; returns the loopback WebSocket URL for canvas. */
 export function openRdpSession(args: {
   host: string;
