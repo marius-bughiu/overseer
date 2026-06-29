@@ -122,6 +122,8 @@ interface AppStore {
   setGroup: (deviceId: string, group: string) => Promise<void>;
   recordHistory: (device: Device, protocol: Protocol) => Promise<void>;
   wake: (deviceId: string, mac: string, broadcast?: string) => Promise<void>;
+  addManualHost: (name: string, host: string) => Promise<void>;
+  removeManualHost: (deviceId: string) => Promise<void>;
 }
 
 let sessionSeq = 0;
@@ -408,6 +410,25 @@ export const useStore = create<AppStore>((set, get) => ({
     } catch (e) {
       get().pushToast("error", `Wake failed: ${String(e)}`);
     }
+  },
+
+  async addManualHost(name, host) {
+    const entry = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      host: host.trim(),
+    };
+    await get().updateSettings({
+      manualHosts: [...get().settings.manualHosts, entry],
+    });
+  },
+
+  async removeManualHost(deviceId) {
+    // deviceId is the "manual-<id>" device id.
+    const rawId = deviceId.replace(/^manual-/, "");
+    await get().updateSettings({
+      manualHosts: get().settings.manualHosts.filter((h) => h.id !== rawId),
+    });
   },
 }));
 

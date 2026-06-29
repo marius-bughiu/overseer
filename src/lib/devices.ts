@@ -1,4 +1,20 @@
-import type { Device } from "./types";
+import type { Device, ManualHost } from "./types";
+
+/** Convert user-added manual hosts into Device records for the list. */
+export function manualToDevices(hosts: ManualHost[]): Device[] {
+  return hosts.map((h) => ({
+    id: `manual-${h.id}`,
+    name: h.name || h.host,
+    dnsName: h.host,
+    addresses: [h.host],
+    os: "",
+    online: true,
+    lastSeen: null,
+    tags: [],
+    user: null,
+    source: "manual",
+  }));
+}
 
 const IPV4 = /^(\d{1,3}\.){3}\d{1,3}$/;
 

@@ -1,5 +1,13 @@
 // Mirrors `overseer_core::tailscale::Device` (serde camelCase).
-export type DiscoverySource = "api" | "localcli";
+// "manual" is a frontend-only source for user-added non-Tailscale hosts.
+export type DiscoverySource = "api" | "localcli" | "manual";
+
+/** A user-added host that is not discovered via Tailscale. */
+export interface ManualHost {
+  id: string;
+  name: string;
+  host: string;
+}
 
 export interface Device {
   id: string;
@@ -65,6 +73,8 @@ export interface Settings {
   groups: Record<string, string>;
   /** Recently-used connections, newest first. */
   history: HistoryEntry[];
+  /** User-added non-Tailscale hosts. */
+  manualHosts: ManualHost[];
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -78,6 +88,7 @@ export const DEFAULT_SETTINGS: Settings = {
   profiles: {},
   groups: {},
   history: [],
+  manualHosts: [],
 };
 
 /** A TOTP (2FA) account stored in the vault. */

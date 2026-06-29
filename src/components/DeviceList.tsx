@@ -1,15 +1,18 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Loader2,
+  Plus,
   RefreshCw,
   Search,
   ServerCrash,
   SignalHigh,
 } from "lucide-react";
 
+import { manualToDevices } from "../lib/devices";
 import { filterDevices, useStore, type DeviceFilter } from "../lib/store";
 import type { Device } from "../lib/types";
 import { DeviceCard } from "./DeviceCard";
+import { Modal } from "./Modal";
 
 const FILTERS: { id: DeviceFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -25,9 +28,15 @@ export function DeviceList() {
   const setSearch = useStore((s) => s.setSearch);
   const setFilter = useStore((s) => s.setFilter);
   const refresh = useStore((s) => s.refresh);
-  const devices = useStore((s) => s.devices);
+  const discovered = useStore((s) => s.devices);
+  const manualHosts = useStore((s) => s.settings.manualHosts);
   const favorites = useStore((s) => s.settings.favorites);
   const groups = useStore((s) => s.settings.groups);
+
+  const devices = useMemo(
+    () => [...manualToDevices(manualHosts), ...discovered],
+    [manualHosts, discovered],
+  );
   const total = devices.length;
   const onlineCount = useMemo(
     () => devices.filter((d) => d.online).length,
@@ -40,6 +49,20 @@ export function DeviceList() {
 
   // Group visible devices into folders when any folders are defined.
   const setConnectTarget = useStore((s) => s.setConnectTarget);
+  const addManualHost = useStore((s) => s.addManualHost);
+  const removeManualHost = useStore((s) => s.removeManualHost);
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [hostName, setHostName] = useState("");
+  const [hostAddr, setHostAddr] = useState("");
+
+  async function submitHost() {
+    if (!hostAddr.trim()) return;
+    await addManualHost(hostName, hostAddr);
+    setHostName("");
+    setHostAddr("");
+    setAddOpen(false);
+  }
 
   const grouped = useMemo(() => {
     const hasGroups = Object.keys(groups).length > 0;
@@ -88,6 +111,14 @@ export function DeviceList() {
               </button>
             ))}
           </div>
+          <button
+            className="btn-ghost"
+            onClick={() => setAddOpen(true)}
+            aria-label="Add host"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">Add host</span>
+          </button>
           <button
             className="btn-ghost"
             onClick={() => void refresh()}
@@ -147,6 +178,7 @@ export function DeviceList() {
                       key={device.id}
                       device={device}
                       onConnect={setConnectTarget}
+                      onRemove={removeManualHost}
                     />
                   ))}
                 </div>
@@ -160,11 +192,60 @@ export function DeviceList() {
                 key={device.id}
                 device={device}
                 onConnect={setConnectTarget}
+                onRemove={removeManualHost}
               />
             ))}
           </div>
         )}
       </div>
+
+      {addOpen && (
+        <Modal
+          title="Add a host"
+          subtitle="Connect to a machine that isn't on your tailnet."
+          onClose={() => setAddOpen(false)}
+          footer={
+            <>
+              <button className="btn-ghost" onClick={() => setAddOpen(false)}>
+                Cancel
+              </button>
+              <button className="btn-primary" onClick={() => void submitHost()}>
+                Add host
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            <div>
+              <label className="label" htmlFor="hn">
+                Name <span className="text-slate-500">(optional)</span>
+              </label>
+              <input
+                id="hn"
+                className="input"
+                value={hostName}
+                onChange={(e) => setHostName(e.target.value)}
+                placeholder="My server"
+              />
+            </div>
+            <div>
+              <label className="label" htmlFor="ha">
+                Host / IP
+              </label>
+              <input
+                id="ha"
+                className="input font-mono"
+                value={hostAddr}
+                onChange={(e) => setHostAddr(e.target.value)}
+                placeholder="192.168.1.50 or host.example.com"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void submitHost();
+                }}
+              />
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

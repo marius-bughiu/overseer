@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, Copy, MonitorPlay, Star } from "lucide-react";
+import { Activity, Copy, MonitorPlay, Star, Trash2 } from "lucide-react";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 import { tcpPing } from "../lib/api";
@@ -17,9 +17,11 @@ const DEFAULT_PORT: Record<Protocol, number> = {
 export function DeviceCard({
   device,
   onConnect,
+  onRemove,
 }: {
   device: Device;
   onConnect: (device: Device) => void;
+  onRemove?: (deviceId: string) => void;
 }) {
   const favorites = useStore((s) => s.settings.favorites);
   const toggleFavorite = useStore((s) => s.toggleFavorite);
@@ -84,16 +86,27 @@ export function DeviceCard({
             </p>
           </div>
         </div>
-        <button
-          className={`btn-subtle shrink-0 p-1.5 ${
-            isFavorite ? "text-amber-400" : "text-slate-500"
-          }`}
-          onClick={() => void toggleFavorite(device.id)}
-          aria-label={isFavorite ? "Remove favorite" : "Add favorite"}
-          aria-pressed={isFavorite}
-        >
-          <Star size={16} fill={isFavorite ? "currentColor" : "none"} />
-        </button>
+        <div className="flex shrink-0 items-center">
+          <button
+            className={`btn-subtle p-1.5 ${
+              isFavorite ? "text-amber-400" : "text-slate-500"
+            }`}
+            onClick={() => void toggleFavorite(device.id)}
+            aria-label={isFavorite ? "Remove favorite" : "Add favorite"}
+            aria-pressed={isFavorite}
+          >
+            <Star size={16} fill={isFavorite ? "currentColor" : "none"} />
+          </button>
+          {device.source === "manual" && onRemove && (
+            <button
+              className="btn-subtle p-1.5 text-slate-500 hover:text-red-400"
+              onClick={() => onRemove(device.id)}
+              aria-label="Remove host"
+            >
+              <Trash2 size={15} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-2 rounded-lg bg-ink-900/60 px-2.5 py-1.5">

@@ -46,7 +46,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Connection **history** & quick-reconnect (per-session reconnect)
 - ✅ Folder / tree grouping
 - ⏳ Per-machine resolution / redirects / gateway in the profile
-- ⏳ Manual (non-Tailscale) hosts
+- ✅ Manual (non-Tailscale) hosts
 - ✅ Import / export connections &amp; settings (JSON file)
 
 ## 4. Connectivity
