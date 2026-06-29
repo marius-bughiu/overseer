@@ -71,7 +71,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 ## 6. Experience & platform
 
 - ✅ Dark theme, responsive desktop + mobile layout
-- 🚧 Light theme + theme toggle
+- ✅ Light theme + theme toggle (CSS-variable palette)
 - ⏳ Command palette & keyboard shortcuts
 - ⏳ Localization (i18n)
 - ⏳ Settings sync across devices

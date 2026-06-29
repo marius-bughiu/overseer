@@ -1,31 +1,43 @@
 /** @type {import('tailwindcss').Config} */
+
+// Colors are backed by CSS variables (defined in src/index.css) so the whole
+// palette can be swapped between dark and light by toggling a class on <html>.
+const v = (name) => `rgb(var(${name}) / <alpha-value>)`;
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
-  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        // Overseer brand palette — a calm "night-ops" teal/indigo.
+        // "Surfaces" — darkest→lightest in dark mode; inverted in light mode.
         ink: {
-          950: "#0a0e14",
-          900: "#0f141c",
-          850: "#141a24",
-          800: "#1a2230",
-          700: "#26303f",
-          600: "#374252",
+          950: v("--ink-950"),
+          900: v("--ink-900"),
+          850: v("--ink-850"),
+          800: v("--ink-800"),
+          700: v("--ink-700"),
+          600: v("--ink-600"),
+        },
+        // Text / borders — overrides Tailwind's slate for the shades we use.
+        slate: {
+          100: v("--slate-100"),
+          200: v("--slate-200"),
+          300: v("--slate-300"),
+          400: v("--slate-400"),
+          500: v("--slate-500"),
+          600: v("--slate-600"),
         },
         brand: {
-          50: "#ecfeff",
-          200: "#a5f3fc",
-          400: "#34d3e0",
-          500: "#16b8c8",
-          600: "#0e96a6",
-          700: "#117585",
+          200: v("--brand-200"),
+          400: v("--brand-400"),
+          500: v("--brand-500"),
+          600: v("--brand-600"),
+          700: v("--brand-700"),
         },
         accent: {
-          400: "#818cf8",
-          500: "#6366f1",
-          600: "#4f46e5",
+          400: v("--accent-400"),
+          500: v("--accent-500"),
+          600: v("--accent-600"),
         },
       },
       fontFamily: {

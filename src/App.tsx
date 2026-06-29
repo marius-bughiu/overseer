@@ -4,7 +4,9 @@ import {
   Lock,
   LockOpen,
   Monitor,
+  Moon,
   Settings as SettingsIcon,
+  Sun,
 } from "lucide-react";
 
 import { About } from "./components/About";
@@ -35,6 +37,8 @@ export default function App() {
   const lockVault = useStore((s) => s.lockVault);
   const pushToast = useStore((s) => s.pushToast);
   const autoLockMinutes = useStore((s) => s.settings.autoLockMinutes);
+  const theme = useStore((s) => s.settings.theme);
+  const setTheme = useStore((s) => s.setTheme);
 
   const activeSession = sessions.find((s) => s.id === activeTab) ?? null;
   const showingSession = activeTab !== "devices" && activeSession !== null;
@@ -109,6 +113,14 @@ export default function App() {
               <span className="hidden sm:inline">{label}</span>
             </button>
           ))}
+          <button
+            className="btn-subtle px-2"
+            onClick={() => void setTheme(theme === "dark" ? "light" : "dark")}
+            title={theme === "dark" ? "Switch to light" : "Switch to dark"}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
           <span
             className="ml-1 hidden items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-500 sm:inline-flex"
             title={vaultUnlocked ? "Vault unlocked" : "Vault locked"}

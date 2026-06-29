@@ -20,7 +20,13 @@ import {
   type Protocol,
   type SessionTab,
   type Settings,
+  type Theme,
 } from "./types";
+
+/** Apply the theme by toggling the root `light` class (see index.css). */
+export function applyTheme(theme: Theme) {
+  document.documentElement.classList.toggle("light", theme === "light");
+}
 
 const TOKEN_SECRET = "tailscale_api_token";
 
@@ -82,6 +88,7 @@ interface AppStore {
   setView: (view: View) => void;
   setSearch: (search: string) => void;
   setFilter: (filter: DeviceFilter) => void;
+  setTheme: (theme: Theme) => Promise<void>;
   pushToast: (kind: Toast["kind"], message: string) => void;
   dismissToast: (id: number) => void;
 
@@ -132,14 +139,17 @@ export const useStore = create<AppStore>((set, get) => ({
         tailscaleCliAvailable(),
         loadSettings(),
       ]);
-      set({
-        platform,
-        cliAvailable,
-        settings: { ...DEFAULT_SETTINGS, ...(persisted ?? {}) },
-      });
+      const settings = { ...DEFAULT_SETTINGS, ...(persisted ?? {}) };
+      applyTheme(settings.theme);
+      set({ platform, cliAvailable, settings });
     } catch (e) {
       get().pushToast("error", `Startup failed: ${String(e)}`);
     }
+  },
+
+  async setTheme(theme) {
+    applyTheme(theme);
+    await get().updateSettings({ theme });
   },
 
   async refresh() {

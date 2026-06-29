@@ -28,6 +28,8 @@ export interface LaunchParams {
 
 export type ConnectMode = "app" | "external";
 
+export type Theme = "dark" | "light";
+
 /** A remembered per-machine connection profile (non-secret). */
 export interface ConnectionProfile {
   protocol: Protocol;
@@ -51,6 +53,8 @@ export interface Settings {
   preferredProtocol: Protocol;
   /** Remember which devices the user starred. */
   favorites: string[];
+  /** UI theme. */
+  theme: Theme;
   /** Auto-lock the vault after this many minutes idle (0 = never). */
   autoLockMinutes: number;
   /** Per-device MAC addresses for Wake-on-LAN. */
@@ -68,6 +72,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tailnet: "-",
   preferredProtocol: "rdp",
   favorites: [],
+  theme: "dark",
   autoLockMinutes: 15,
   deviceMacs: {},
   profiles: {},
