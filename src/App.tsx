@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 
 import { About } from "./components/About";
+import { CommandPalette } from "./components/CommandPalette";
+import { ConnectDialog } from "./components/ConnectDialog";
 import { DeviceList } from "./components/DeviceList";
 import { SessionHost } from "./components/SessionHost";
 import { SessionTabs } from "./components/SessionTabs";
@@ -39,6 +41,9 @@ export default function App() {
   const autoLockMinutes = useStore((s) => s.settings.autoLockMinutes);
   const theme = useStore((s) => s.settings.theme);
   const setTheme = useStore((s) => s.setTheme);
+  const connectTarget = useStore((s) => s.connectTarget);
+  const setConnectTarget = useStore((s) => s.setConnectTarget);
+  const setPaletteOpen = useStore((s) => s.setPaletteOpen);
 
   const activeSession = sessions.find((s) => s.id === activeTab) ?? null;
   const showingSession = activeTab !== "devices" && activeSession !== null;
@@ -52,6 +57,18 @@ export default function App() {
   useEffect(() => {
     void init();
   }, [init]);
+
+  // Command palette hotkey (Cmd/Ctrl-K).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [setPaletteOpen]);
 
   // Auto-refresh once we have what we need for the chosen discovery method.
   useEffect(() => {
@@ -157,6 +174,13 @@ export default function App() {
         </div>
       </main>
 
+      {connectTarget && (
+        <ConnectDialog
+          device={connectTarget}
+          onClose={() => setConnectTarget(null)}
+        />
+      )}
+      <CommandPalette />
       <Toasts />
     </div>
   );

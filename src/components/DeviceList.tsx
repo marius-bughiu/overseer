@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Loader2,
   RefreshCw,
@@ -9,7 +9,6 @@ import {
 
 import { filterDevices, useStore, type DeviceFilter } from "../lib/store";
 import type { Device } from "../lib/types";
-import { ConnectDialog } from "./ConnectDialog";
 import { DeviceCard } from "./DeviceCard";
 
 const FILTERS: { id: DeviceFilter; label: string }[] = [
@@ -40,6 +39,8 @@ export function DeviceList() {
   );
 
   // Group visible devices into folders when any folders are defined.
+  const setConnectTarget = useStore((s) => s.setConnectTarget);
+
   const grouped = useMemo(() => {
     const hasGroups = Object.keys(groups).length > 0;
     if (!hasGroups) return null;
@@ -54,8 +55,6 @@ export function DeviceList() {
       return a.localeCompare(b);
     });
   }, [visible, groups]);
-
-  const [connecting, setConnecting] = useState<Device | null>(null);
 
   return (
     <div className="flex h-full flex-col">
@@ -147,7 +146,7 @@ export function DeviceList() {
                     <DeviceCard
                       key={device.id}
                       device={device}
-                      onConnect={setConnecting}
+                      onConnect={setConnectTarget}
                     />
                   ))}
                 </div>
@@ -160,19 +159,12 @@ export function DeviceList() {
               <DeviceCard
                 key={device.id}
                 device={device}
-                onConnect={setConnecting}
+                onConnect={setConnectTarget}
               />
             ))}
           </div>
         )}
       </div>
-
-      {connecting && (
-        <ConnectDialog
-          device={connecting}
-          onClose={() => setConnecting(null)}
-        />
-      )}
     </div>
   );
 }

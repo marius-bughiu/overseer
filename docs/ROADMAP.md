@@ -72,7 +72,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 
 - ✅ Dark theme, responsive desktop + mobile layout
 - ✅ Light theme + theme toggle (CSS-variable palette)
-- ⏳ Command palette & keyboard shortcuts
+- ✅ Command palette & keyboard shortcuts (Cmd/Ctrl-K)
 - ⏳ Localization (i18n)
 - ⏳ Settings sync across devices
 

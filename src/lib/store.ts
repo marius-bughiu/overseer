@@ -77,6 +77,12 @@ interface AppStore {
   /** "devices" (home) or a session id. */
   activeTab: string;
 
+  // --- ui: connect dialog + command palette ---
+  /** Device the connect dialog is open for (null = closed). */
+  connectTarget: Device | null;
+  /** Whether the command palette is open. */
+  paletteOpen: boolean;
+
   // --- actions ---
   init: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -89,6 +95,8 @@ interface AppStore {
   setSearch: (search: string) => void;
   setFilter: (filter: DeviceFilter) => void;
   setTheme: (theme: Theme) => Promise<void>;
+  setConnectTarget: (device: Device | null) => void;
+  setPaletteOpen: (open: boolean) => void;
   pushToast: (kind: Toast["kind"], message: string) => void;
   dismissToast: (id: number) => void;
 
@@ -131,6 +139,8 @@ export const useStore = create<AppStore>((set, get) => ({
 
   sessions: [],
   activeTab: "devices",
+  connectTarget: null,
+  paletteOpen: false,
 
   async init() {
     try {
@@ -207,6 +217,8 @@ export const useStore = create<AppStore>((set, get) => ({
   setView: (view) => set({ view }),
   setSearch: (search) => set({ search }),
   setFilter: (filter) => set({ filter }),
+  setConnectTarget: (connectTarget) => set({ connectTarget }),
+  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
 
   pushToast(kind, message) {
     const toast: Toast = { id: ++toastSeq, kind, message };
