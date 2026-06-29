@@ -79,7 +79,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Dark theme, responsive desktop + mobile layout
 - ✅ Light theme + theme toggle (CSS-variable palette)
 - ✅ Command palette & keyboard shortcuts (Cmd/Ctrl-K)
-- ⏳ Localization (i18n)
+- ✅ Localization (i18n) — dependency-free framework with English, Spanish,
+  German, French; language picker in Settings (string coverage expanding)
 - ⏳ Settings sync across devices
 
 ## 7. Team / enterprise (later, optional — must not add telemetry)

@@ -6,6 +6,7 @@ import {
   X,
 } from "lucide-react";
 
+import { useT } from "../lib/i18n";
 import { useStore } from "../lib/store";
 import type { SessionTab } from "../lib/types";
 
@@ -27,6 +28,7 @@ export function SessionTabs() {
   const activeTab = useStore((s) => s.activeTab);
   const setActiveTab = useStore((s) => s.setActiveTab);
   const closeSession = useStore((s) => s.closeSession);
+  const t = useT();
 
   if (sessions.length === 0) return null;
 
@@ -40,7 +42,7 @@ export function SessionTabs() {
             : "text-slate-400 hover:text-slate-200"
         }`}
       >
-        <Monitor size={13} /> Machines
+        <Monitor size={13} /> {t("nav.machines")}
       </button>
 
       <button
@@ -52,7 +54,7 @@ export function SessionTabs() {
         }`}
         title="Session overview"
       >
-        <LayoutGrid size={13} /> Overview
+        <LayoutGrid size={13} /> {t("nav.overview")}
       </button>
 
       {sessions.map((s) => (

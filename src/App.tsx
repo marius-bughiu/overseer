@@ -18,12 +18,13 @@ import { SessionOverview } from "./components/SessionOverview";
 import { SessionTabs } from "./components/SessionTabs";
 import { Settings } from "./components/Settings";
 import { Toasts } from "./components/Toasts";
+import { useT } from "./lib/i18n";
 import { useStore, type View } from "./lib/store";
 
-const NAV: { id: View; label: string; icon: typeof Monitor }[] = [
-  { id: "devices", label: "Machines", icon: Monitor },
-  { id: "settings", label: "Settings", icon: SettingsIcon },
-  { id: "about", label: "About", icon: Info },
+const NAV: { id: View; key: string; icon: typeof Monitor }[] = [
+  { id: "devices", key: "nav.machines", icon: Monitor },
+  { id: "settings", key: "nav.settings", icon: SettingsIcon },
+  { id: "about", key: "nav.about", icon: Info },
 ];
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
   const connectTarget = useStore((s) => s.connectTarget);
   const setConnectTarget = useStore((s) => s.setConnectTarget);
   const setPaletteOpen = useStore((s) => s.setPaletteOpen);
+  const t = useT();
 
   const activeSession = sessions.find((s) => s.id === activeTab) ?? null;
   const showingOverview = activeTab === "overview" && sessions.length > 0;
@@ -120,7 +122,7 @@ export default function App() {
         </div>
 
         <nav className="flex items-center gap-1">
-          {NAV.map(({ id, label, icon: Icon }) => (
+          {NAV.map(({ id, key, icon: Icon }) => (
             <button
               key={id}
               onClick={() => navTo(id)}
@@ -132,7 +134,7 @@ export default function App() {
               aria-current={view === id && !showingSession ? "page" : undefined}
             >
               <Icon size={16} />
-              <span className="hidden sm:inline">{label}</span>
+              <span className="hidden sm:inline">{t(key)}</span>
             </button>
           ))}
           <button

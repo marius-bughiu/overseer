@@ -74,6 +74,8 @@ export interface Settings {
   favorites: string[];
   /** UI theme. */
   theme: Theme;
+  /** UI language (BCP-47-ish short code: en, es, de, fr). */
+  language: "en" | "es" | "de" | "fr";
   /** Auto-lock the vault after this many minutes idle (0 = never). */
   autoLockMinutes: number;
   /** Automatically try to reconnect a dropped session. */
@@ -98,6 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
   preferredProtocol: "rdp",
   favorites: [],
   theme: "dark",
+  language: "en",
   autoLockMinutes: 15,
   autoReconnect: true,
   deviceMacs: {},

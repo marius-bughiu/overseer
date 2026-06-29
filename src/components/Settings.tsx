@@ -16,8 +16,9 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 
 import { resetKnownHosts } from "../lib/api";
 import { relativeTime } from "../lib/devices";
+import { LANGUAGES, useT } from "../lib/i18n";
 import { useStore } from "../lib/store";
-import type { DiscoveryMethod } from "../lib/types";
+import type { DiscoveryMethod, Settings as SettingsType } from "../lib/types";
 import { TotpPanel } from "./TotpPanel";
 import { VaultGate } from "./VaultGate";
 
@@ -37,6 +38,8 @@ export function Settings() {
   const exportSettings = useStore((s) => s.exportSettings);
   const importSettings = useStore((s) => s.importSettings);
   const importCredentials = useStore((s) => s.importCredentials);
+  const language = useStore((s) => s.settings.language);
+  const t = useT();
 
   const [gateOpen, setGateOpen] = useState(false);
   const isMobile = platform === "android" || platform === "ios";
@@ -48,7 +51,33 @@ export function Settings() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
       <section className="card p-5">
-        <h2 className="text-sm font-semibold text-slate-100">Discovery</h2>
+        <h2 className="text-sm font-semibold text-slate-100">
+          {t("settings.language")}
+        </h2>
+        <p className="mt-1 text-sm text-slate-400">
+          {t("settings.language.desc")}
+        </p>
+        <select
+          className="input mt-3"
+          value={language}
+          onChange={(e) =>
+            void updateSettings({
+              language: e.target.value as SettingsType["language"],
+            })
+          }
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+      </section>
+
+      <section className="card p-5">
+        <h2 className="text-sm font-semibold text-slate-100">
+          {t("settings.discovery")}
+        </h2>
         <p className="mt-1 text-sm text-slate-400">
           How Overseer finds the machines on your tailnet.
         </p>
@@ -144,7 +173,9 @@ export function Settings() {
       </section>
 
       <section className="card p-5">
-        <h2 className="text-sm font-semibold text-slate-100">Security</h2>
+        <h2 className="text-sm font-semibold text-slate-100">
+          {t("settings.security")}
+        </h2>
         <p className="mt-1 text-sm text-slate-400">
           Your API token and per-machine credentials live in an encrypted vault.
         </p>
@@ -237,7 +268,7 @@ export function Settings() {
 
       <section className="card p-5">
         <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-slate-100">
-          <Terminal size={15} /> Remote desktop clients
+          <Terminal size={15} /> {t("settings.clients")}
         </h2>
         <p className="mt-1 text-sm text-slate-400">
           Overseer hands sessions to your platform's RDP/VNC client. Make sure
@@ -261,7 +292,7 @@ export function Settings() {
 
       <section className="card p-5">
         <h2 className="text-sm font-semibold text-slate-100">
-          Backup &amp; restore
+          {t("settings.backup")}
         </h2>
         <p className="mt-1 text-sm text-slate-400">
           Export or import your non-secret settings (discovery, folders,
@@ -279,7 +310,7 @@ export function Settings() {
 
       <section className="card p-5">
         <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-slate-100">
-          <KeyRound size={15} /> Import credentials
+          <KeyRound size={15} /> {t("settings.importCreds")}
         </h2>
         <p className="mt-1 text-sm text-slate-400">
           Bring in logins from a password manager. Each entry with a host
@@ -310,7 +341,7 @@ export function Settings() {
       {history.length > 0 && (
         <section className="card p-5">
           <h2 className="text-sm font-semibold text-slate-100">
-            Recent connections
+            {t("settings.recent")}
           </h2>
           <ul className="mt-3 divide-y divide-ink-800 text-sm">
             {history.slice(0, 10).map((h) => (
