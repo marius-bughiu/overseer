@@ -126,6 +126,7 @@ export interface SessionTab {
   port: number;
   username?: string | null;
   password?: string | null;
+  keyPath?: string | null;
   wsUrl?: string;
   /** For kind === "files": the SFTP session id. */
   sftpId?: string;

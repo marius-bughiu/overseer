@@ -44,6 +44,7 @@ async function connectProtocol(args: OpenSessionArgs): Promise<string> {
       port: args.port,
       username: args.username ?? "",
       password: args.password ?? "",
+      keyPath: args.keyPath ?? null,
       cols: 80,
       rows: 24,
     });
@@ -73,6 +74,7 @@ export interface OpenSessionArgs {
   port: number;
   username?: string | null;
   password?: string | null;
+  keyPath?: string | null;
 }
 
 export interface Toast {
@@ -305,6 +307,7 @@ export const useStore = create<AppStore>((set, get) => ({
       port: args.port,
       username: args.username ?? null,
       password: args.password ?? null,
+      keyPath: args.keyPath ?? null,
       status: "connecting",
     };
     set({ sessions: [...get().sessions, tab], activeTab: id });
@@ -329,6 +332,7 @@ export const useStore = create<AppStore>((set, get) => ({
       port: args.port,
       username: args.username ?? null,
       password: args.password ?? null,
+      keyPath: args.keyPath ?? null,
       status: "connecting",
     };
     set({ sessions: [...get().sessions, tab], activeTab: id });
@@ -338,6 +342,7 @@ export const useStore = create<AppStore>((set, get) => ({
         port: args.port,
         username: args.username ?? "",
         password: args.password ?? "",
+        keyPath: args.keyPath ?? null,
       });
       get().updateSession(id, { sftpId, status: "open" });
     } catch (e) {
@@ -363,6 +368,7 @@ export const useStore = create<AppStore>((set, get) => ({
           port: s.port,
           username: s.username ?? "",
           password: s.password ?? "",
+          keyPath: s.keyPath ?? null,
         });
         get().updateSession(id, { sftpId, status: "open" });
       } else {
@@ -373,6 +379,7 @@ export const useStore = create<AppStore>((set, get) => ({
           port: s.port,
           username: s.username,
           password: s.password,
+          keyPath: s.keyPath,
         });
         get().updateSession(id, { wsUrl, status: "open" });
       }

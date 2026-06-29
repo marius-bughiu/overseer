@@ -74,6 +74,7 @@ impl Registry {
         port: u16,
         username: &str,
         password: String,
+        key_path: Option<String>,
         known_hosts: std::path::PathBuf,
     ) -> Result<String> {
         if username.trim().is_empty() {
@@ -88,11 +89,10 @@ impl Registry {
             .await
             .map_err(|e| AppError::Session(format!("SSH connect failed: {e}")))?;
 
-        let authed = handle
-            .authenticate_password(username, password)
+        let authed = crate::ssh_auth::authenticate(&mut handle, username, password, key_path)
             .await
-            .map_err(|e| AppError::Session(e.to_string()))?;
-        if !authed.success() {
+            .map_err(AppError::Session)?;
+        if !authed {
             return Err(AppError::Session("authentication failed".into()));
         }
 

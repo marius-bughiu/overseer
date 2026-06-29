@@ -305,6 +305,7 @@ pub async fn open_ssh(
     port: u16,
     username: String,
     password: String,
+    key_path: Option<String>,
     cols: u32,
     rows: u32,
     known_hosts: std::path::PathBuf,
@@ -336,8 +337,8 @@ pub async fn open_ssh(
                 return;
             }
         };
-        match handle.authenticate_password(&username, password).await {
-            Ok(res) if res.success() => {}
+        match crate::ssh_auth::authenticate(&mut handle, &username, password, key_path).await {
+            Ok(true) => {}
             _ => {
                 let _ = ws_tx
                     .send(Message::Text(

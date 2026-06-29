@@ -36,10 +36,14 @@ export function openSshSession(args: {
   port: number;
   username: string;
   password: string;
+  keyPath?: string | null;
   cols: number;
   rows: number;
 }): Promise<string> {
-  return invoke<string>("open_ssh_session", args);
+  return invoke<string>("open_ssh_session", {
+    ...args,
+    keyPath: args.keyPath ?? null,
+  });
 }
 
 /** Open an embedded RDP bridge; returns the loopback WebSocket URL for canvas. */
@@ -110,8 +114,9 @@ export const sftp = {
     port: number;
     username: string;
     password: string;
+    keyPath?: string | null;
   }): Promise<string> {
-    return invoke("sftp_connect", args);
+    return invoke("sftp_connect", { ...args, keyPath: args.keyPath ?? null });
   },
   list(id: string, path: string): Promise<SftpFile[]> {
     return invoke("sftp_list", { id, path });

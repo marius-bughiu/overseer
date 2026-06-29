@@ -91,11 +91,22 @@ pub async fn open_ssh_session(
     port: u16,
     username: String,
     password: String,
+    key_path: Option<String>,
     cols: u32,
     rows: u32,
 ) -> Result<String> {
     let known_hosts = state.known_hosts();
-    session::open_ssh(host, port, username, password, cols, rows, known_hosts).await
+    session::open_ssh(
+        host,
+        port,
+        username,
+        password,
+        key_path,
+        cols,
+        rows,
+        known_hosts,
+    )
+    .await
 }
 
 /// Open an embedded **RDP** session bridge. Returns the loopback WebSocket URL
@@ -192,11 +203,12 @@ pub async fn sftp_connect(
     port: u16,
     username: String,
     password: String,
+    key_path: Option<String>,
 ) -> Result<String> {
     let known_hosts = state.known_hosts();
     state
         .sftp
-        .connect(&host, port, &username, password, known_hosts)
+        .connect(&host, port, &username, password, key_path, known_hosts)
         .await
 }
 

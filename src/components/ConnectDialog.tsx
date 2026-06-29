@@ -65,6 +65,13 @@ export function ConnectDialog({
   const [group, setGroupValue] = useState(savedGroup);
   const [scanning, setScanning] = useState(false);
   const [openPorts, setOpenPorts] = useState<number[]>([]);
+  const [keyPath, setKeyPath] = useState("");
+
+  async function pickKey() {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const picked = await open({ multiple: false });
+    if (typeof picked === "string") setKeyPath(picked);
+  }
 
   async function scanPorts() {
     setScanning(true);
@@ -130,6 +137,7 @@ export function ConnectDialog({
           port,
           username: username.trim() || null,
           password: password || null,
+          keyPath: protocol === "ssh" ? keyPath || null : null,
         });
         onClose();
         return;
@@ -167,6 +175,7 @@ export function ConnectDialog({
         port: protocol === "ssh" ? port : 22,
         username: username.trim() || null,
         password: password || null,
+        keyPath: keyPath || null,
       });
       onClose();
     } catch (err) {
@@ -364,6 +373,34 @@ export function ConnectDialog({
             client will prompt for them.
           </p>
         </div>
+
+        {protocol === "ssh" && effectiveMode === "app" && (
+          <div>
+            <label className="label" htmlFor="keypath">
+              SSH private key <span className="text-slate-500">(optional)</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="keypath"
+                className="input font-mono"
+                value={keyPath}
+                onChange={(e) => setKeyPath(e.target.value)}
+                placeholder="~/.ssh/id_ed25519"
+              />
+              <button
+                type="button"
+                className="btn-ghost shrink-0"
+                onClick={() => void pickKey()}
+              >
+                Browse
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-slate-500">
+              If set, key auth is used; the password field becomes the key
+              passphrase.
+            </p>
+          </div>
+        )}
 
         <label className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-300">
           <input

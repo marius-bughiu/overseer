@@ -64,7 +64,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ⏳ Biometric unlock (Touch ID / Windows Hello / Android biometric)
 - ⏳ Credential injection into embedded sessions (no manual typing)
 - ⏳ External password-manager import (KeePass / Bitwarden / 1Password)
-- ⏳ SSH key management & agent
+- ✅ SSH public-key auth (key file + passphrase); agent forwarding planned
 - ✅ Host-key verification & trust store (TOFU known-hosts + reset)
 - ✅ TOTP / 2FA secret storage (vault-stored, live codes)
 

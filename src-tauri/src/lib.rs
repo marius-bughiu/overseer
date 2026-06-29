@@ -12,6 +12,7 @@ mod launcher;
 mod rdp;
 mod session;
 mod sftp;
+mod ssh_auth;
 mod trust;
 mod wol;
 
