@@ -1,10 +1,18 @@
-import { Copy, MonitorPlay, Star } from "lucide-react";
+import { useState } from "react";
+import { Activity, Copy, MonitorPlay, Star } from "lucide-react";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
+import { tcpPing } from "../lib/api";
 import { osLabel, primaryAddress, relativeTime } from "../lib/devices";
 import { useStore } from "../lib/store";
-import type { Device } from "../lib/types";
+import type { Device, Protocol } from "../lib/types";
 import { OsIcon } from "./OsIcon";
+
+const DEFAULT_PORT: Record<Protocol, number> = {
+  rdp: 3389,
+  vnc: 5900,
+  ssh: 22,
+};
 
 export function DeviceCard({
   device,
@@ -15,11 +23,16 @@ export function DeviceCard({
 }) {
   const favorites = useStore((s) => s.settings.favorites);
   const toggleFavorite = useStore((s) => s.toggleFavorite);
+  const preferredProtocol = useStore((s) => s.settings.preferredProtocol);
   const pushToast = useStore((s) => s.pushToast);
   const isFavorite = favorites.includes(device.id);
 
   const address = primaryAddress(device);
   const seen = relativeTime(device.lastSeen);
+
+  const [ping, setPing] = useState<"idle" | "pinging" | number | "down">(
+    "idle",
+  );
 
   async function copyAddress() {
     try {
@@ -27,6 +40,16 @@ export function DeviceCard({
       pushToast("success", `Copied ${address}`);
     } catch (e) {
       pushToast("error", String(e));
+    }
+  }
+
+  async function doPing() {
+    setPing("pinging");
+    try {
+      const ms = await tcpPing(address, DEFAULT_PORT[preferredProtocol]);
+      setPing(ms === null ? "down" : ms);
+    } catch {
+      setPing("down");
     }
   }
 
@@ -77,13 +100,40 @@ export function DeviceCard({
         <code className="truncate font-mono text-xs text-slate-400">
           {address}
         </code>
-        <button
-          className="btn-subtle shrink-0 p-1 text-slate-500"
-          onClick={() => void copyAddress()}
-          aria-label="Copy address"
-        >
-          <Copy size={14} />
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          {ping !== "idle" && (
+            <span
+              className={`text-[11px] tabular-nums ${
+                ping === "down"
+                  ? "text-red-400"
+                  : ping === "pinging"
+                    ? "text-slate-500"
+                    : "text-emerald-400"
+              }`}
+            >
+              {ping === "pinging"
+                ? "…"
+                : ping === "down"
+                  ? "down"
+                  : `${ping}ms`}
+            </span>
+          )}
+          <button
+            className="btn-subtle p-1 text-slate-500"
+            onClick={() => void doPing()}
+            aria-label="Ping device"
+            title={`Ping ${preferredProtocol.toUpperCase()} port`}
+          >
+            <Activity size={14} />
+          </button>
+          <button
+            className="btn-subtle p-1 text-slate-500"
+            onClick={() => void copyAddress()}
+            aria-label="Copy address"
+          >
+            <Copy size={14} />
+          </button>
+        </div>
       </div>
 
       {device.tags.length > 0 && (

@@ -101,6 +101,19 @@ pub async fn wake_on_lan(mac: String, broadcast: Option<String>) -> Result<()> {
     wol::send_wake(&mac, broadcast.as_deref()).await
 }
 
+/// Measure TCP connect latency to `host:port` in milliseconds, or `None` if the
+/// port is closed / unreachable within the timeout. Used as a reachability /
+/// latency probe in the machine list.
+#[tauri::command]
+pub async fn tcp_ping(host: String, port: u16) -> Option<u64> {
+    let start = std::time::Instant::now();
+    let connect = tokio::net::TcpStream::connect((host.as_str(), port));
+    match tokio::time::timeout(std::time::Duration::from_secs(3), connect).await {
+        Ok(Ok(_)) => Some(start.elapsed().as_millis() as u64),
+        _ => None,
+    }
+}
+
 /// Return the OS family Overseer is running on. Used by the UI to adapt copy
 /// (e.g. which remote desktop client to suggest installing).
 #[tauri::command]

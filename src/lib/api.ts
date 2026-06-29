@@ -50,6 +50,11 @@ export function wakeOnLan(
   return invoke("wake_on_lan", { mac, broadcast: broadcast ?? null });
 }
 
+/** Measure TCP connect latency (ms) to a host:port, or null if unreachable. */
+export function tcpPing(host: string, port: number): Promise<number | null> {
+  return invoke("tcp_ping", { host, port });
+}
+
 /** The OS family Overseer is running on. */
 export function hostPlatform(): Promise<
   "android" | "ios" | "windows" | "macos" | "linux"

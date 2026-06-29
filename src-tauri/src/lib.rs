@@ -112,6 +112,7 @@ pub fn run() {
             commands::open_vnc_session,
             commands::open_ssh_session,
             commands::wake_on_lan,
+            commands::tcp_ping,
             commands::host_platform,
             commands::save_settings,
             commands::load_settings,
