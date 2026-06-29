@@ -43,6 +43,10 @@ export interface ConnectionProfile {
   protocol: Protocol;
   mode: ConnectMode;
   port?: number | null;
+  /** Preferred RDP desktop width (embedded sessions). */
+  width?: number | null;
+  /** Preferred RDP desktop height (embedded sessions). */
+  height?: number | null;
 }
 
 /** A reusable command snippet that can be pasted as keystrokes into a terminal. */
@@ -137,6 +141,9 @@ export interface SessionTab {
   username?: string | null;
   password?: string | null;
   keyPath?: string | null;
+  /** RDP desktop dimensions for this session (embedded). */
+  width?: number | null;
+  height?: number | null;
   wsUrl?: string;
   /** For kind === "files": the SFTP session id. */
   sftpId?: string;

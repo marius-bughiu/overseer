@@ -23,7 +23,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
   periodically; click to focus)
 - ✅ Per-session reconnect & connection status
 - ✅ Full-screen sessions (detached-window still planned)
-- ⏳ Multi-monitor (RDP) & dynamic resolution / scaling
+- ✅ RDP resolution selection + scale-to-fit rendering (⏳ multi-monitor)
 - ⏳ Device & resource redirection (clipboard, drives, printers, audio)
 - ✅ In-session file transfer — SFTP browser (upload/download/mkdir/delete) for
   SSH hosts (RDP drive redirect still planned)
@@ -49,7 +49,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Per-machine **connection profiles** (protocol, mode, port)
 - ✅ Connection **history** & quick-reconnect (per-session reconnect)
 - ✅ Folder / tree grouping
-- ⏳ Per-machine resolution / redirects / gateway in the profile
+- ✅ Per-machine RDP resolution saved in the profile (⏳ redirects / gateway)
 - ✅ Manual (non-Tailscale) hosts
 - ✅ Import / export connections &amp; settings (JSON file)
 

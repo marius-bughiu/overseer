@@ -26,6 +26,17 @@ const DEFAULT_PORT: Record<Protocol, number> = {
 /** All protocols can now render in an embedded, in-app tab. */
 const EMBEDDABLE: Protocol[] = ["rdp", "vnc", "ssh", "telnet"];
 
+/** Selectable RDP desktop resolutions for embedded sessions. */
+const RESOLUTIONS: { label: string; width: number; height: number }[] = [
+  { label: "1280 × 800", width: 1280, height: 800 },
+  { label: "1366 × 768", width: 1366, height: 768 },
+  { label: "1600 × 900", width: 1600, height: 900 },
+  { label: "1920 × 1080", width: 1920, height: 1080 },
+  { label: "2560 × 1440", width: 2560, height: 1440 },
+];
+
+const DEFAULT_RES = RESOLUTIONS[0];
+
 type Mode = "app" | "external";
 
 export function ConnectDialog({
@@ -67,6 +78,12 @@ export function ConnectDialog({
   const [scanning, setScanning] = useState(false);
   const [openPorts, setOpenPorts] = useState<number[]>([]);
   const [keyPath, setKeyPath] = useState("");
+  const [width, setWidth] = useState<number>(
+    profile?.width ?? DEFAULT_RES.width,
+  );
+  const [height, setHeight] = useState<number>(
+    profile?.height ?? DEFAULT_RES.height,
+  );
 
   async function pickKey() {
     const { open } = await import("@tauri-apps/plugin-dialog");
@@ -125,7 +142,13 @@ export function ConnectDialog({
       }
       await updateSettings({ preferredProtocol: protocol });
       // Remember this device's connection profile, folder and history.
-      await setProfile(device.id, { protocol, mode: effectiveMode, port });
+      await setProfile(device.id, {
+        protocol,
+        mode: effectiveMode,
+        port,
+        width: protocol === "rdp" ? width : (profile?.width ?? null),
+        height: protocol === "rdp" ? height : (profile?.height ?? null),
+      });
       if (group !== savedGroup) await setGroup(device.id, group);
       await recordHistory(device, protocol);
 
@@ -139,6 +162,8 @@ export function ConnectDialog({
           username: username.trim() || null,
           password: password || null,
           keyPath: protocol === "ssh" ? keyPath || null : null,
+          width: protocol === "rdp" ? width : null,
+          height: protocol === "rdp" ? height : null,
         });
         onClose();
         return;
@@ -374,6 +399,34 @@ export function ConnectDialog({
             client will prompt for them.
           </p>
         </div>
+
+        {protocol === "rdp" && effectiveMode === "app" && (
+          <div>
+            <label className="label" htmlFor="resolution">
+              Resolution
+            </label>
+            <select
+              id="resolution"
+              className="input"
+              value={`${width}x${height}`}
+              onChange={(e) => {
+                const [w, h] = e.target.value.split("x").map(Number);
+                setWidth(w);
+                setHeight(h);
+              }}
+            >
+              {RESOLUTIONS.map((r) => (
+                <option key={r.label} value={`${r.width}x${r.height}`}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-xs text-slate-500">
+              The remote desktop is negotiated at this size and scaled to fit
+              the session tab.
+            </p>
+          </div>
+        )}
 
         {protocol === "ssh" && effectiveMode === "app" && (
           <div>

@@ -82,8 +82,8 @@ async function connectProtocol(args: OpenSessionArgs): Promise<string> {
       port: args.port,
       username: args.username ?? "",
       password: args.password ?? "",
-      width: 1280,
-      height: 800,
+      width: args.width ?? 1280,
+      height: args.height ?? 800,
     });
   throw new Error(`${args.protocol} cannot be embedded`);
 }
@@ -103,6 +103,9 @@ export interface OpenSessionArgs {
   username?: string | null;
   password?: string | null;
   keyPath?: string | null;
+  /** RDP desktop dimensions (embedded). Falls back to a default if unset. */
+  width?: number | null;
+  height?: number | null;
 }
 
 export interface Toast {
@@ -395,6 +398,8 @@ export const useStore = create<AppStore>((set, get) => ({
       username: args.username ?? null,
       password: args.password ?? null,
       keyPath: args.keyPath ?? null,
+      width: args.width ?? null,
+      height: args.height ?? null,
       status: "connecting",
     };
     set({ sessions: [...get().sessions, tab], activeTab: id });
@@ -467,6 +472,8 @@ export const useStore = create<AppStore>((set, get) => ({
           username: s.username,
           password: s.password,
           keyPath: s.keyPath,
+          width: s.width,
+          height: s.height,
         });
         get().updateSession(id, { wsUrl, status: "open" });
       }
