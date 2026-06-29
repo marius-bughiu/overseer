@@ -22,10 +22,10 @@ use ironrdp::connector::{self, ConnectionResult, Credentials};
 use ironrdp::graphics::image_processing::PixelFormat;
 use ironrdp::input::{Database, MouseButton, MousePosition, Operation, Scancode, WheelRotations};
 use ironrdp::pdu::gcc::KeyboardType;
+use ironrdp::pdu::geometry::InclusiveRectangle;
 use ironrdp::pdu::rdp::capability_sets::MajorPlatformType;
 use ironrdp::pdu::rdp::client_info::{PerformanceFlags, TimezoneInfo};
 use ironrdp::session::image::DecodedImage;
-use ironrdp::pdu::geometry::InclusiveRectangle;
 use ironrdp::session::{ActiveStage, ActiveStageOutput};
 use tokio::sync::mpsc::UnboundedSender;
 use tokio_rustls::rustls;
@@ -335,7 +335,10 @@ fn tls_upgrade(
     stream: TcpStream,
     server_name: String,
 ) -> Result<
-    (rustls::StreamOwned<rustls::ClientConnection, TcpStream>, Vec<u8>),
+    (
+        rustls::StreamOwned<rustls::ClientConnection, TcpStream>,
+        Vec<u8>,
+    ),
     Box<dyn std::error::Error>,
 > {
     let mut config = rustls::client::ClientConfig::builder()
