@@ -237,11 +237,16 @@ export function SessionHost({ session }: { session: SessionTab }) {
             onStatus={onStatus}
           />
         ) : session.protocol === "rdp" ? (
-          <RdpViewer wsUrl={session.wsUrl} onStatus={onStatus} />
+          <RdpViewer
+            wsUrl={session.wsUrl}
+            sessionId={session.id}
+            onStatus={onStatus}
+          />
         ) : (
           <VncViewer
             wsUrl={session.wsUrl}
             password={session.password}
+            sessionId={session.id}
             onStatus={onStatus}
           />
         )}

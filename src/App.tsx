@@ -14,6 +14,7 @@ import { CommandPalette } from "./components/CommandPalette";
 import { ConnectDialog } from "./components/ConnectDialog";
 import { DeviceList } from "./components/DeviceList";
 import { SessionHost } from "./components/SessionHost";
+import { SessionOverview } from "./components/SessionOverview";
 import { SessionTabs } from "./components/SessionTabs";
 import { Settings } from "./components/Settings";
 import { Toasts } from "./components/Toasts";
@@ -46,7 +47,11 @@ export default function App() {
   const setPaletteOpen = useStore((s) => s.setPaletteOpen);
 
   const activeSession = sessions.find((s) => s.id === activeTab) ?? null;
-  const showingSession = activeTab !== "devices" && activeSession !== null;
+  const showingOverview = activeTab === "overview" && sessions.length > 0;
+  const showingSession =
+    activeTab !== "devices" &&
+    activeTab !== "overview" &&
+    activeSession !== null;
 
   function navTo(id: View) {
     setView(id);
@@ -156,6 +161,8 @@ export default function App() {
         <div className="min-h-0 flex-1">
           {showingSession && activeSession ? (
             <SessionHost session={activeSession} />
+          ) : showingOverview ? (
+            <SessionOverview />
           ) : (
             <>
               {view === "devices" && <DeviceList />}

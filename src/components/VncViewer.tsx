@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import RFB from "@novnc/novnc";
 
+import { registerScreen } from "../lib/screenRegistry";
 import type { SessionStatus } from "../lib/types";
 
 /**
@@ -11,10 +12,12 @@ import type { SessionStatus } from "../lib/types";
 export function VncViewer({
   wsUrl,
   password,
+  sessionId,
   onStatus,
 }: {
   wsUrl: string;
   password?: string | null;
+  sessionId?: string;
   onStatus?: (status: SessionStatus) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,6 +32,11 @@ export function VncViewer({
     rfb.resizeSession = false;
     rfb.background = "#0a0e14";
 
+    // noVNC renders into a <canvas> inside the container; expose it for thumbnails.
+    const unregister = sessionId
+      ? registerScreen(sessionId, () => container.querySelector("canvas"))
+      : undefined;
+
     const onConnect = () => onStatus?.("open");
     const onDisconnect = () => onStatus?.("closed");
     const onCredentials = () => {
@@ -40,6 +48,7 @@ export function VncViewer({
     rfb.addEventListener("credentialsrequired", onCredentials);
 
     return () => {
+      unregister?.();
       rfb.removeEventListener("connect", onConnect);
       rfb.removeEventListener("disconnect", onDisconnect);
       rfb.removeEventListener("credentialsrequired", onCredentials);
@@ -49,7 +58,7 @@ export function VncViewer({
         /* ignore */
       }
     };
-  }, [wsUrl, password, onStatus]);
+  }, [wsUrl, password, sessionId, onStatus]);
 
   return <div ref={containerRef} className="h-full w-full bg-ink-950" />;
 }

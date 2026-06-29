@@ -1,4 +1,10 @@
-import { FolderOpen, Monitor, TerminalSquare, X } from "lucide-react";
+import {
+  FolderOpen,
+  LayoutGrid,
+  Monitor,
+  TerminalSquare,
+  X,
+} from "lucide-react";
 
 import { useStore } from "../lib/store";
 import type { SessionTab } from "../lib/types";
@@ -35,6 +41,18 @@ export function SessionTabs() {
         }`}
       >
         <Monitor size={13} /> Machines
+      </button>
+
+      <button
+        onClick={() => setActiveTab("overview")}
+        className={`flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs ${
+          activeTab === "overview"
+            ? "bg-ink-800 text-brand-400"
+            : "text-slate-400 hover:text-slate-200"
+        }`}
+        title="Session overview"
+      >
+        <LayoutGrid size={13} /> Overview
       </button>
 
       {sessions.map((s) => (

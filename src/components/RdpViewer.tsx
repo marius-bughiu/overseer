@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 
+import { registerScreen } from "../lib/screenRegistry";
 import type { SessionStatus } from "../lib/types";
 
 const FRAME_RESIZE = 0x01;
@@ -106,9 +107,11 @@ const SCANCODES: Record<string, number> = {
  */
 export function RdpViewer({
   wsUrl,
+  sessionId,
   onStatus,
 }: {
   wsUrl: string;
+  sessionId?: string;
   onStatus?: (status: SessionStatus) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -118,6 +121,10 @@ export function RdpViewer({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    const unregister = sessionId
+      ? registerScreen(sessionId, () => canvasRef.current)
+      : undefined;
 
     const ws = new WebSocket(wsUrl);
     ws.binaryType = "arraybuffer";
@@ -206,6 +213,7 @@ export function RdpViewer({
     canvas.addEventListener("keyup", onKeyUp);
 
     return () => {
+      unregister?.();
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointerup", onUp);
@@ -219,7 +227,7 @@ export function RdpViewer({
         /* ignore */
       }
     };
-  }, [wsUrl, onStatus]);
+  }, [wsUrl, sessionId, onStatus]);
 
   return (
     <div className="flex h-full w-full items-center justify-center bg-ink-950">

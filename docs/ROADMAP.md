@@ -19,7 +19,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Embedded **SSH** terminal (xterm.js + russh backend)
 - ✅ Embedded **VNC** viewer (noVNC + in-process WebSocket↔TCP bridge)
 - ✅ Embedded **RDP** client (IronRDP, pure-Rust; canvas framebuffer + input)
-- ⏳ Live session thumbnails / overview grid
+- ✅ Live session thumbnails / overview grid (canvas snapshots, refreshed
+  periodically; click to focus)
 - ✅ Per-session reconnect & connection status
 - ✅ Full-screen sessions (detached-window still planned)
 - ⏳ Multi-monitor (RDP) & dynamic resolution / scaling
