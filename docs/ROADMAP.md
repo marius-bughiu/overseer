@@ -20,7 +20,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Embedded **VNC** viewer (noVNC + in-process WebSocket↔TCP bridge)
 - ✅ Embedded **RDP** client (IronRDP, pure-Rust; canvas framebuffer + input)
 - ⏳ Live session thumbnails / overview grid
-- ⏳ Per-session reconnect & connection status
+- ✅ Per-session reconnect & connection status
 - ✅ Full-screen sessions (detached-window still planned)
 - ⏳ Multi-monitor (RDP) & dynamic resolution / scaling
 - ⏳ Device & resource redirection (clipboard, drives, printers, audio)
@@ -62,7 +62,7 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Manual vault lock
 - ✅ Auto-lock on idle
 - ⏳ Biometric unlock (Touch ID / Windows Hello / Android biometric)
-- ⏳ Credential injection into embedded sessions (no manual typing)
+- ✅ Credential injection into embedded sessions (password / key passed directly)
 - ⏳ External password-manager import (KeePass / Bitwarden / 1Password)
 - ✅ SSH public-key auth (key file + passphrase); agent forwarding planned
 - ✅ Host-key verification & trust store (TOFU known-hosts + reset)
