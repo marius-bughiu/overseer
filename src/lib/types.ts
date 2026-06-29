@@ -80,6 +80,8 @@ export interface Settings {
   autoLockMinutes: number;
   /** Automatically try to reconnect a dropped session. */
   autoReconnect: boolean;
+  /** Require biometric authentication to use the app (mobile only). */
+  biometricLock: boolean;
   /** Per-device MAC addresses for Wake-on-LAN. */
   deviceMacs: Record<string, string>;
   /** Per-device remembered connection profiles. */
@@ -105,6 +107,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: "en",
   autoLockMinutes: 15,
   autoReconnect: true,
+  biometricLock: false,
   deviceMacs: {},
   profiles: {},
   groups: {},

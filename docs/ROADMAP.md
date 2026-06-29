@@ -12,8 +12,9 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 The headline experience and the great majority of planned features are
 **implemented and merged**. What remains are a handful of items that each need
 substantial protocol-client or native-platform work — SPICE, RDP Gateway,
-RDP multi-monitor, RDP device redirection (drives/printers/audio), and native
-biometric unlock. These are intentionally left as tracked future milestones
+RDP multi-monitor, RDP device redirection (drives/printers/audio), and desktop
+biometrics (Windows Hello). These are intentionally left as tracked future
+milestones
 rather than shipped half-done. Team/enterprise items are out of scope by
 choice (and must never add telemetry).
 
@@ -80,8 +81,9 @@ choice (and must never add telemetry).
 - ✅ Encrypted Stronghold vault (per-machine credentials + API token)
 - ✅ Manual vault lock
 - ✅ Auto-lock on idle
-- ⏳ Biometric unlock (Touch ID / Windows Hello / Android biometric) — needs
-  native per-platform integration (mobile via tauri-plugin-biometric); tracked
+- ✅ Biometric app lock on mobile (Touch ID / Face ID / Android biometric via
+  tauri-plugin-biometric) — gates app access; the vault keeps its master
+  password (⏳ Windows Hello / desktop biometrics)
 - ✅ Credential injection into embedded sessions (password / key passed directly)
 - ✅ External password-manager import (Bitwarden JSON · KeePass / 1Password /
   generic CSV → manual hosts + vault credentials)

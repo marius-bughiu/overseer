@@ -66,6 +66,11 @@ russh-sftp = "2.3.0"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
 
+# Biometric authentication (Touch ID / Face ID / Android biometric) is a
+# mobile-only plugin; it is never compiled into desktop builds.
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-biometric = "2"
+
 [features]
 # This feature is used by `tauri-build` and the Tauri CLI; do not remove it.
 custom-protocol = ["tauri/custom-protocol"]

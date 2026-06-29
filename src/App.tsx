@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Info,
   Lock,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { About } from "./components/About";
+import { BiometricLock } from "./components/BiometricLock";
 import { CommandPalette } from "./components/CommandPalette";
 import { ConnectDialog } from "./components/ConnectDialog";
 import { DeviceList } from "./components/DeviceList";
@@ -18,6 +19,7 @@ import { SessionOverview } from "./components/SessionOverview";
 import { SessionTabs } from "./components/SessionTabs";
 import { Settings } from "./components/Settings";
 import { Toasts } from "./components/Toasts";
+import { biometricPlatform } from "./lib/biometric";
 import { useT } from "./lib/i18n";
 import { useStore, type View } from "./lib/store";
 
@@ -46,7 +48,13 @@ export default function App() {
   const connectTarget = useStore((s) => s.connectTarget);
   const setConnectTarget = useStore((s) => s.setConnectTarget);
   const setPaletteOpen = useStore((s) => s.setPaletteOpen);
+  const platform = useStore((s) => s.platform);
+  const biometricLock = useStore((s) => s.settings.biometricLock);
   const t = useT();
+
+  const [bioPassed, setBioPassed] = useState(false);
+  const needsBiometric =
+    biometricPlatform(platform) && biometricLock && !bioPassed;
 
   const activeSession = sessions.find((s) => s.id === activeTab) ?? null;
   const showingOverview = activeTab === "overview" && sessions.length > 0;
@@ -105,6 +113,10 @@ export default function App() {
       events.forEach((e) => window.removeEventListener(e, reset));
     };
   }, [vaultUnlocked, autoLockMinutes, lockVault, pushToast]);
+
+  if (needsBiometric) {
+    return <BiometricLock onUnlock={() => setBioPassed(true)} />;
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-ink-950">

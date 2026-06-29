@@ -91,6 +91,12 @@ pub fn run() {
         }));
     }
 
+    // Biometric authentication is available only on mobile platforms.
+    #[cfg(mobile)]
+    {
+        builder = builder.plugin(tauri_plugin_biometric::init());
+    }
+
     builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
