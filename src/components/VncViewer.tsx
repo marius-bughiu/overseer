@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import RFB from "@novnc/novnc";
 
 import { registerScreen } from "../lib/screenRegistry";
+import { registerVnc } from "../lib/vncBus";
 import type { SessionStatus } from "../lib/types";
 
 /**
@@ -33,8 +34,12 @@ export function VncViewer({
     rfb.background = "#0a0e14";
 
     // noVNC renders into a <canvas> inside the container; expose it for thumbnails.
-    const unregister = sessionId
+    const unregisterScreen = sessionId
       ? registerScreen(sessionId, () => container.querySelector("canvas"))
+      : undefined;
+    // Expose clipboard paste into the remote VNC server.
+    const unregisterVnc = sessionId
+      ? registerVnc(sessionId, (text) => rfb.clipboardPasteFrom(text))
       : undefined;
 
     const onConnect = () => onStatus?.("open");
@@ -48,7 +53,8 @@ export function VncViewer({
     rfb.addEventListener("credentialsrequired", onCredentials);
 
     return () => {
-      unregister?.();
+      unregisterScreen?.();
+      unregisterVnc?.();
       rfb.removeEventListener("connect", onConnect);
       rfb.removeEventListener("disconnect", onDisconnect);
       rfb.removeEventListener("credentialsrequired", onCredentials);

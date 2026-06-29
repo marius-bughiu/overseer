@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Circle,
+  Clipboard,
   ClipboardPaste,
   Loader2,
   Maximize2,
@@ -9,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
+import { readText } from "@tauri-apps/plugin-clipboard-manager";
 
 import {
   cancelRecording,
@@ -22,6 +24,7 @@ import {
   sendToTerminal,
   toKeystrokes,
 } from "../lib/terminalBus";
+import { pasteToVnc } from "../lib/vncBus";
 import type { SessionStatus, SessionTab } from "../lib/types";
 import { FileBrowser } from "./FileBrowser";
 import { RdpViewer } from "./RdpViewer";
@@ -58,11 +61,29 @@ export function SessionHost({ session }: { session: SessionTab }) {
   const isTerminal =
     session.kind === "screen" &&
     (session.protocol === "ssh" || session.protocol === "telnet");
+  const isVnc = session.kind === "screen" && session.protocol === "vnc";
+  const canPaste = isTerminal || isVnc;
 
   function paste(text: string) {
     setSnippetMenu(false);
     if (!sendToTerminal(session.id, toKeystrokes(text))) {
       pushToast("error", "Terminal is not connected.");
+    }
+  }
+
+  async function pasteClipboard() {
+    try {
+      const text = await readText();
+      if (!text) {
+        pushToast("info", "Clipboard is empty.");
+        return;
+      }
+      const ok = isVnc
+        ? pasteToVnc(session.id, text)
+        : sendToTerminal(session.id, text);
+      if (!ok) pushToast("error", "Session is not connected.");
+    } catch (e) {
+      pushToast("error", `Paste failed: ${String(e)}`);
     }
   }
 
@@ -131,6 +152,15 @@ export function SessionHost({ session }: { session: SessionTab }) {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {canPaste && (
+            <button
+              className="btn-subtle p-1.5"
+              onClick={() => void pasteClipboard()}
+              title="Paste clipboard into session"
+            >
+              <Clipboard size={14} />
+            </button>
+          )}
           {isTerminal && (
             <button
               className={`btn-subtle p-1.5 ${recording ? "text-red-400" : ""}`}

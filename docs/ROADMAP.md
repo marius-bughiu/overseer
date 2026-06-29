@@ -24,7 +24,8 @@ Status legend: ✅ done · 🚧 in progress · ⏳ planned
 - ✅ Per-session reconnect & connection status
 - ✅ Full-screen sessions (detached-window still planned)
 - ✅ RDP resolution selection + scale-to-fit rendering (⏳ multi-monitor)
-- ⏳ Device & resource redirection (clipboard, drives, printers, audio)
+- ✅ Clipboard redirection — paste the local clipboard into SSH / Telnet / VNC
+  sessions (⏳ drives, printers, audio)
 - ✅ In-session file transfer — SFTP browser (upload/download/mkdir/delete) for
   SSH hosts (RDP drive redirect still planned)
 - ✅ Session recording — terminal sessions captured to an asciicast v2

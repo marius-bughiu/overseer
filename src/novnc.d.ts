@@ -32,5 +32,7 @@ declare module "@novnc/novnc" {
     sendCtrlAltDel(): void;
     machineShutdown(): void;
     machineReboot(): void;
+    /** Send text to the remote server's clipboard. */
+    clipboardPasteFrom(text: string): void;
   }
 }
