@@ -112,7 +112,7 @@ export function RdpViewer({
 }: {
   wsUrl: string;
   sessionId?: string;
-  onStatus?: (status: SessionStatus) => void;
+  onStatus?: (status: SessionStatus, detail?: string) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -145,7 +145,7 @@ export function RdpViewer({
     };
 
     ws.onopen = () => onStatus?.("open");
-    ws.onerror = () => onStatus?.("error");
+    ws.onerror = () => onStatus?.("error", "The RDP bridge connection errored.");
     ws.onclose = () => onStatus?.("closed");
     ws.onmessage = (ev) => {
       const view = new DataView(ev.data as ArrayBuffer);
@@ -170,7 +170,7 @@ export function RdpViewer({
         const msg = new TextDecoder().decode(
           new Uint8Array(ev.data as ArrayBuffer, 1),
         );
-        onStatus?.("error");
+        onStatus?.("error", `RDP error: ${msg}`);
         ctx.fillStyle = "#fca5a5";
         ctx.font = "14px ui-monospace, monospace";
         ctx.fillText(`RDP error: ${msg}`, 16, 28);

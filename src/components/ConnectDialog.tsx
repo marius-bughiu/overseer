@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   ExternalLink,
   FolderOpen,
@@ -109,12 +109,18 @@ export function ConnectDialog({
     if (typeof picked === "string") setKeyPath(picked);
   }
 
+  // Tracks the latest host so an in-flight scan can drop a stale result if the
+  // user edits the target while it's running.
+  const hostRef = useRef(host);
+  hostRef.current = host;
+
   async function scanPorts() {
     const target = host.trim();
     if (!target) return;
     setScanning(true);
     try {
       const found = await portScan(target);
+      if (hostRef.current.trim() !== target) return; // host changed; drop stale result
       setOpenPorts(found);
       setScanned(true);
       pushToast(

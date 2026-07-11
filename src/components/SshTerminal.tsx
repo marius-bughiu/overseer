@@ -22,7 +22,7 @@ export function SshTerminal({
 }: {
   wsUrl: string;
   sessionId?: string;
-  onStatus?: (status: SessionStatus) => void;
+  onStatus?: (status: SessionStatus, detail?: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -86,7 +86,7 @@ export function SshTerminal({
       term.write("\r\n\x1b[2m[overseer] session closed\x1b[0m\r\n");
       onStatus?.("closed");
     };
-    ws.onerror = () => onStatus?.("error");
+    ws.onerror = () => onStatus?.("error", "The SSH bridge connection errored.");
 
     const send = (data: string) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(encoder.encode(data));

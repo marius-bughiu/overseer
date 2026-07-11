@@ -127,12 +127,20 @@ async fn accept_ws(
 /// Open a VNC bridge to `host:port`. Returns the loopback WebSocket URL the
 /// frontend (noVNC) should connect to.
 pub async fn open_vnc(host: String, port: u16) -> Result<String> {
-    // Connect to the remote up-front so an unreachable/refused VNC port fails
-    // the command (and shows a real error) instead of silently dropping later.
-    let tcp = connect_remote(&host, port).await?;
+    // Probe reachability up-front so a refused/unreachable port fails the
+    // command with a real error — then drop the probe and reconnect *after* the
+    // browser WebSocket is ready. Connecting only once the client is present
+    // keeps the RFB version handshake prompt: macOS Screen Sharing sends its
+    // ProtocolVersion on connect and hangs up if the client is slow to answer,
+    // so a socket opened up-front and left idle while the bridge spins up gets
+    // dropped mid-handshake.
+    drop(connect_remote(&host, port).await?);
     let (listener, token, url) = bind_loopback().await?;
     tokio::spawn(async move {
         let Some(ws) = accept_ws(listener, token).await else {
+            return;
+        };
+        let Ok(tcp) = connect_remote(&host, port).await else {
             return;
         };
         bridge_ws_tcp(ws, tcp).await;
@@ -200,12 +208,15 @@ const SE: u8 = 240;
 /// refuse all options) and stripped from the stream sent to the terminal; the
 /// frontend renders it with xterm.js like SSH.
 pub async fn open_telnet(host: String, port: u16) -> Result<String> {
-    // Connect up-front so an unreachable/refused port fails the command with a
-    // real error instead of silently dropping the bridge (see `open_vnc`).
-    let tcp = connect_remote(&host, port).await?;
+    // Probe for a real error up-front, then connect for real once the browser
+    // WebSocket is ready — same rationale as `open_vnc`.
+    drop(connect_remote(&host, port).await?);
     let (listener, token, url) = bind_loopback().await?;
     tokio::spawn(async move {
         let Some(ws) = accept_ws(listener, token).await else {
+            return;
+        };
+        let Ok(tcp) = connect_remote(&host, port).await else {
             return;
         };
         bridge_telnet(ws, tcp).await;

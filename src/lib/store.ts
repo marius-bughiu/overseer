@@ -88,6 +88,25 @@ async function connectProtocol(args: OpenSessionArgs): Promise<string> {
   throw new Error(`${args.protocol} cannot be embedded`);
 }
 
+/**
+ * Turn a raw connect error into an optional actionable hint. A refused VNC
+ * port, for example, almost always means the VNC/Screen Sharing server isn't
+ * running on the remote.
+ */
+function connectionHint(protocol: Protocol, raw: string): string | null {
+  const e = raw.toLowerCase();
+  const refused = e.includes("refused") || e.includes("10061");
+  const timedOut =
+    e.includes("timed out") || e.includes("timeout") || e.includes("10060");
+  if (protocol === "vnc" && refused)
+    return 'Nothing is listening on the VNC port. On macOS, enable it under System Settings → General → Sharing → Screen Sharing (and, under its ⓘ options, set a password with "VNC viewers may control screen with password"). Then re-scan the port to confirm it is open.';
+  if (refused)
+    return "Nothing is listening on that port — make sure the remote service is running and bound to the network interface.";
+  if (timedOut)
+    return "The host didn't respond — it may be offline, asleep, or a firewall / tailnet ACL is blocking the port.";
+  return null;
+}
+
 const TOKEN_SECRET = "tailscale_api_token";
 
 export type Platform = "android" | "ios" | "windows" | "macos" | "linux";
@@ -469,9 +488,15 @@ export const useStore = create<AppStore>((set, get) => ({
       get().updateSession(id, { wsUrl, status: "connecting" });
       get().logSession(id, "info", "Bridge ready — negotiating with the remote…");
     } catch (e) {
-      get().updateSession(id, { status: "error", error: String(e) });
-      get().logSession(id, "error", String(e));
-      get().pushToast("error", `Could not open session: ${String(e)}`);
+      const raw = String(e);
+      const hint = connectionHint(args.protocol, raw);
+      get().updateSession(id, {
+        status: "error",
+        error: hint ? `${raw}\n\n${hint}` : raw,
+      });
+      get().logSession(id, "error", raw);
+      if (hint) get().logSession(id, "info", hint);
+      get().pushToast("error", `Could not open session: ${raw}`);
     }
   },
 
@@ -552,8 +577,14 @@ export const useStore = create<AppStore>((set, get) => ({
         get().logSession(id, "info", "Bridge ready — negotiating with the remote…");
       }
     } catch (e) {
-      get().updateSession(id, { status: "error", error: String(e) });
-      get().logSession(id, "error", String(e));
+      const raw = String(e);
+      const hint = connectionHint(s.protocol, raw);
+      get().updateSession(id, {
+        status: "error",
+        error: hint ? `${raw}\n\n${hint}` : raw,
+      });
+      get().logSession(id, "error", raw);
+      if (hint) get().logSession(id, "info", hint);
     }
   },
 
