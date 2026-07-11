@@ -19,6 +19,8 @@ declare module "@novnc/novnc" {
     resizeSession: boolean;
     clipViewport: boolean;
     background: string;
+    /** Draw a dot at the pointer when the remote sends no cursor shape. */
+    showDotCursor: boolean;
     qualityLevel: number;
     compressionLevel: number;
     focus(): void;
