@@ -165,19 +165,31 @@ async fn bridge_ws_tcp(
 
     // remote -> frontend
     let to_ws = tokio::spawn(async move {
-        let mut buf = vec![0u8; 32 * 1024];
+        let mut buf = vec![0u8; 256 * 1024];
         loop {
-            match tcp_rd.read(&mut buf).await {
+            let mut n = match tcp_rd.read(&mut buf).await {
                 Ok(0) | Err(_) => break,
-                Ok(n) => {
-                    if ws_tx
-                        .send(Message::Binary(buf[..n].to_vec()))
-                        .await
-                        .is_err()
-                    {
-                        break;
-                    }
+                Ok(n) => n,
+            };
+            // Coalesce whatever else has already arrived into this same frame.
+            // The framebuffer stream tends to arrive as many small TCP segments;
+            // sending one larger WebSocket frame instead of dozens of tiny ones
+            // cuts the number of onmessage events noVNC processes on its (decode)
+            // main thread.
+            while n < buf.len() {
+                match tcp_rd.try_read(&mut buf[n..]) {
+                    Ok(0) => break,
+                    Ok(m) => n += m,
+                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => break,
+                    Err(_) => break,
                 }
+            }
+            if ws_tx
+                .send(Message::Binary(buf[..n].to_vec()))
+                .await
+                .is_err()
+            {
+                break;
             }
         }
     });
