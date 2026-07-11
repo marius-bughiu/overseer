@@ -317,6 +317,16 @@ export function ConnectDialog({
       }
     >
       <form onSubmit={onSubmit} className="space-y-4">
+        {/* Lets Enter submit the form (behaves like clicking Connect). The
+            visible Connect button is in the modal footer, outside this form. */}
+        <button
+          type="submit"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+        >
+          Connect
+        </button>
         <div>
           <span className="label">Protocol</span>
           <div className={`grid gap-2 ${GRID_COLS[supported.length] ?? "grid-cols-4"}`}>

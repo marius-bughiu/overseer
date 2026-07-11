@@ -116,6 +116,16 @@
   }
 }
 
+/*
+ * The embedded VNC canvas: show the local pointer at its natural size rather
+ * than noVNC's remote cursor, which is rendered client-side at the remote's
+ * (often Retina, 2x) native pixel size and looks oversized on a scaled-down
+ * viewer. `!important` overrides the inline cursor noVNC sets on the canvas.
+ */
+.vnc-surface canvas {
+  cursor: default !important;
+}
+
 /* Thin, unobtrusive scrollbars. */
 ::-webkit-scrollbar {
   width: 10px;

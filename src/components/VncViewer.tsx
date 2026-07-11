@@ -41,10 +41,6 @@ export function VncViewer({
     rfb.scaleViewport = true;
     rfb.resizeSession = false;
     rfb.background = "#0a0e14";
-    // Show a dot at the pointer when the remote hasn't sent a cursor shape yet
-    // (macOS Screen Sharing only sends one when the cursor changes), so the
-    // pointer is never invisible.
-    rfb.showDotCursor = true;
 
     // noVNC renders into a <canvas> inside the container; expose it for thumbnails.
     const unregisterScreen = sessionId
@@ -117,5 +113,7 @@ export function VncViewer({
     };
   }, [wsUrl, password, username, sessionId, onStatus, onLog]);
 
-  return <div ref={containerRef} className="h-full w-full bg-ink-950" />;
+  return (
+    <div ref={containerRef} className="vnc-surface h-full w-full bg-ink-950" />
+  );
 }
