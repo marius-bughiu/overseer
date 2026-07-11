@@ -50,7 +50,12 @@ async fn connect_remote(host: &str, port: u16) -> Result<tokio::net::TcpStream> 
     )
     .await
     {
-        Ok(Ok(stream)) => Ok(stream),
+        Ok(Ok(stream)) => {
+            // VNC/RDP/terminal traffic is request/response-heavy and latency
+            // sensitive; disable Nagle so small packets aren't held ~40ms.
+            let _ = stream.set_nodelay(true);
+            Ok(stream)
+        }
         Ok(Err(e)) => Err(AppError::Session(format!(
             "could not connect to {host}:{port}: {e}"
         ))),
@@ -102,6 +107,9 @@ async fn accept_ws(
         Ok(Ok((stream, _addr))) => stream,
         _ => return None,
     };
+    // Loopback, but Nagle still adds latency to the request/response framebuffer
+    // loop; disable it so frames aren't delayed on the way to the browser.
+    let _ = stream.set_nodelay(true);
 
     let want_path = format!("/{token}");
     let ws = tokio_tungstenite::accept_hdr_async(stream, move |req: &Request, resp: Response| {
