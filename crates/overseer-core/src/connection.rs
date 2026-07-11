@@ -58,6 +58,36 @@ impl Protocol {
     pub fn supports_embedded(self) -> bool {
         matches!(self, Protocol::Vnc | Protocol::Ssh | Protocol::Telnet)
     }
+
+    /// The protocols that make sense as an inbound connection to a machine
+    /// running `os` (the string Tailscale reports, matched case-insensitively),
+    /// ordered with the recommended protocol first. macOS, for example, has no
+    /// native RDP server, so RDP is omitted there. An unknown or empty `os` —
+    /// e.g. a manually added host whose OS we don't know — returns every
+    /// protocol, since we can't safely narrow the choice.
+    pub fn supported_for(os: &str) -> Vec<Protocol> {
+        match os.to_ascii_lowercase().as_str() {
+            "windows" => vec![Protocol::Rdp, Protocol::Vnc, Protocol::Ssh],
+            "macos" => vec![Protocol::Vnc, Protocol::Ssh],
+            "linux" => vec![Protocol::Ssh, Protocol::Vnc, Protocol::Rdp],
+            "ios" | "android" => vec![Protocol::Vnc, Protocol::Ssh],
+            _ => vec![
+                Protocol::Rdp,
+                Protocol::Vnc,
+                Protocol::Ssh,
+                Protocol::Telnet,
+            ],
+        }
+    }
+
+    /// The recommended protocol for a machine running `os`: the first entry of
+    /// [`Protocol::supported_for`].
+    pub fn recommended_for(os: &str) -> Protocol {
+        Protocol::supported_for(os)
+            .into_iter()
+            .next()
+            .unwrap_or(Protocol::Rdp)
+    }
 }
 
 /// A validated request to connect to a host.
@@ -344,6 +374,44 @@ mod tests {
         assert!(Protocol::Vnc.supports_embedded());
         assert!(Protocol::Ssh.supports_embedded());
         assert!(!Protocol::Rdp.supports_embedded());
+    }
+
+    #[test]
+    fn macos_omits_rdp_and_recommends_vnc() {
+        let macos = Protocol::supported_for("macOS");
+        assert_eq!(macos, vec![Protocol::Vnc, Protocol::Ssh]);
+        assert!(!macos.contains(&Protocol::Rdp));
+        assert_eq!(Protocol::recommended_for("macOS"), Protocol::Vnc);
+    }
+
+    #[test]
+    fn windows_recommends_rdp_and_linux_recommends_ssh() {
+        assert_eq!(Protocol::recommended_for("windows"), Protocol::Rdp);
+        assert_eq!(Protocol::supported_for("windows")[0], Protocol::Rdp);
+        assert_eq!(Protocol::recommended_for("linux"), Protocol::Ssh);
+    }
+
+    #[test]
+    fn unknown_or_empty_os_allows_all_protocols() {
+        let all = Protocol::supported_for("");
+        assert_eq!(all.len(), 4);
+        assert!(all.contains(&Protocol::Telnet));
+        assert_eq!(Protocol::recommended_for(""), Protocol::Rdp);
+        // OS matching is case-insensitive.
+        assert_eq!(
+            Protocol::supported_for("Windows"),
+            Protocol::supported_for("windows")
+        );
+    }
+
+    #[test]
+    fn recommended_is_always_the_first_supported() {
+        for os in ["windows", "macos", "linux", "ios", "android", "plan9", ""] {
+            assert_eq!(
+                Protocol::recommended_for(os),
+                Protocol::supported_for(os)[0]
+            );
+        }
     }
 
     #[test]

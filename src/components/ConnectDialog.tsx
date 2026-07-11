@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 import { launchConnection, portScan } from "../lib/api";
-import { primaryAddress } from "../lib/devices";
+import { primaryAddress, supportedProtocols } from "../lib/devices";
 import { buildWebUrl, openWebConsole } from "../lib/web";
 import { useStore } from "../lib/store";
 import type { Device, Protocol } from "../lib/types";
@@ -27,6 +27,14 @@ const DEFAULT_PORT: Record<Protocol, number> = {
 
 /** All protocols can now render in an embedded, in-app tab. */
 const EMBEDDABLE: Protocol[] = ["rdp", "vnc", "ssh", "telnet"];
+
+/** Static grid-column class per protocol count (literals for the Tailwind JIT). */
+const GRID_COLS: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+};
 
 /** Selectable RDP desktop resolutions for embedded sessions. */
 const RESOLUTIONS: { label: string; width: number; height: number }[] = [
@@ -48,7 +56,6 @@ export function ConnectDialog({
   device: Device;
   onClose: () => void;
 }) {
-  const preferred = useStore((s) => s.settings.preferredProtocol);
   const profile = useStore((s) => s.settings.profiles[device.id]);
   const savedMac = useStore((s) => s.settings.deviceMacs[device.id] ?? "");
   const savedGroup = useStore((s) => s.settings.groups[device.id] ?? "");
@@ -63,7 +70,15 @@ export function ConnectDialog({
   const recordHistory = useStore((s) => s.recordHistory);
   const wake = useStore((s) => s.wake);
 
-  const initialProtocol = profile?.protocol ?? preferred;
+  // Only offer protocols that make sense for this machine's OS, recommended
+  // one first (e.g. no RDP to a Mac). Default to the recommended protocol,
+  // but keep a saved per-device choice when it's still supported.
+  const supported = supportedProtocols(device.os);
+  const recommended = supported[0];
+  const initialProtocol: Protocol =
+    profile?.protocol && supported.includes(profile.protocol)
+      ? profile.protocol
+      : recommended;
   const [protocol, setProtocol] = useState<Protocol>(initialProtocol);
   const [host, setHost] = useState(primaryAddress(device));
   const [port, setPort] = useState<number>(
@@ -281,12 +296,15 @@ export function ConnectDialog({
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <span className="label">Protocol</span>
-          <div className="grid grid-cols-4 gap-2">
-            {(["rdp", "vnc", "ssh", "telnet"] as Protocol[]).map((p) => (
+          <div className={`grid gap-2 ${GRID_COLS[supported.length] ?? "grid-cols-4"}`}>
+            {supported.map((p) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => changeProtocol(p)}
+                title={
+                  p === recommended ? "Recommended for this machine" : undefined
+                }
                 className={`btn ${
                   protocol === p
                     ? "bg-brand-600 text-white"
