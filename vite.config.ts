@@ -28,6 +28,16 @@ export default defineConfig({
     },
   },
 
+  // The dev-time dependency pre-bundler uses esbuild's default (older) target,
+  // which rejects the top-level await in noVNC. Match it to the modern webviews
+  // Tauri targets so `tauri dev` can optimize noVNC just like the prod build.
+  optimizeDeps: {
+    esbuildOptions: {
+      target: "esnext",
+      supported: { "top-level-await": true },
+    },
+  },
+
   // Produce a build compatible with the webviews Tauri targets. Modern targets
   // are required for top-level await (used by noVNC). These map to WebView2
   // (Windows), WKWebView (macOS/iOS 15+) and recent WebKitGTK (Linux).
