@@ -13,6 +13,7 @@ export function manualToDevices(hosts: ManualHost[]): Device[] {
     tags: [],
     user: null,
     source: "manual",
+    isSelf: false,
   }));
 }
 

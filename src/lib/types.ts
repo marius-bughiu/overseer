@@ -20,6 +20,8 @@ export interface Device {
   tags: string[];
   user: string | null;
   source: DiscoverySource;
+  /** True for the local machine (the `Self` node from CLI discovery). */
+  isSelf: boolean;
 }
 
 export type Protocol = "rdp" | "vnc" | "ssh" | "telnet";
@@ -99,7 +101,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  discoveryMethod: "api",
+  discoveryMethod: "cli",
   tailnet: "-",
   preferredProtocol: "rdp",
   favorites: [],

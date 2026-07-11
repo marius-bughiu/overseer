@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity, Copy, MonitorPlay, Star, Trash2 } from "lucide-react";
+import { Activity, Copy, Laptop, MonitorPlay, Star, Trash2 } from "lucide-react";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 import { tcpPing } from "../lib/api";
@@ -160,13 +160,24 @@ export function DeviceCard({
         </div>
       )}
 
-      <button
-        className="btn-primary mt-auto w-full"
-        onClick={() => onConnect(device)}
-      >
-        <MonitorPlay size={16} />
-        Connect
-      </button>
+      {device.isSelf ? (
+        <button
+          className="btn-ghost mt-auto w-full cursor-default text-slate-400"
+          disabled
+          title="You're connected from this machine"
+        >
+          <Laptop size={16} />
+          This machine
+        </button>
+      ) : (
+        <button
+          className="btn-primary mt-auto w-full"
+          onClick={() => onConnect(device)}
+        >
+          <MonitorPlay size={16} />
+          Connect
+        </button>
+      )}
     </div>
   );
 }

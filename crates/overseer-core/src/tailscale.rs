@@ -53,6 +53,11 @@ pub struct Device {
     pub user: Option<String>,
     /// Which discovery method produced this record.
     pub source: DiscoverySource,
+    /// Whether this record is the local machine — the `Self` node reported by
+    /// the `tailscale` CLI. The REST API has no self marker, so API-discovered
+    /// devices are never flagged.
+    #[serde(default)]
+    pub is_self: bool,
 }
 
 impl Device {
@@ -138,7 +143,7 @@ struct LocalNode {
 }
 
 impl LocalNode {
-    fn into_device(self) -> Device {
+    fn into_device(self, is_self: bool) -> Device {
         let dns = trim_dns(self.dns_name.as_deref().unwrap_or_default());
         let name = short_name(self.host_name.as_deref(), &dns);
         Device {
@@ -152,6 +157,7 @@ impl LocalNode {
             tags: self.tags.unwrap_or_default(),
             user: None,
             source: DiscoverySource::LocalCli,
+            is_self,
         }
     }
 }
@@ -163,14 +169,14 @@ pub fn parse_local_status(json: &str) -> Result<Vec<Device>> {
     let status: LocalStatus = serde_json::from_str(json)?;
     let mut devices = Vec::new();
     if let Some(self_node) = status.self_node {
-        devices.push(self_node.into_device());
+        devices.push(self_node.into_device(true));
     }
     if let Some(peers) = status.peer {
         // Sort by key for deterministic ordering (HashMap iteration order is
         // otherwise non-deterministic, which makes the UI jump around).
         let mut entries: Vec<_> = peers.into_iter().collect();
         entries.sort_by(|a, b| a.0.cmp(&b.0));
-        devices.extend(entries.into_iter().map(|(_, node)| node.into_device()));
+        devices.extend(entries.into_iter().map(|(_, node)| node.into_device(false)));
     }
     Ok(devices)
 }
@@ -226,6 +232,7 @@ pub fn parse_api_devices(json: &str, now: DateTime<Utc>) -> Result<Vec<Device>> 
                 tags: d.tags.unwrap_or_default(),
                 user: d.user,
                 source: DiscoverySource::Api,
+                is_self: false,
             }
         })
         .collect();
@@ -272,12 +279,15 @@ mod tests {
     fn parses_local_status_with_self_first() {
         let devices = parse_local_status(LOCAL_STATUS).unwrap();
         assert_eq!(devices.len(), 3);
-        // Self is always first.
+        // Self is always first and is the only device flagged as local.
         assert_eq!(devices[0].name, "my-laptop");
         assert_eq!(devices[0].source, DiscoverySource::LocalCli);
+        assert!(devices[0].is_self);
         // Peers are sorted deterministically by their map key (key-a < key-b).
         assert_eq!(devices[1].name, "media-server");
+        assert!(!devices[1].is_self);
         assert_eq!(devices[2].name, "office-pc");
+        assert!(!devices[2].is_self);
     }
 
     #[test]
@@ -305,6 +315,7 @@ mod tests {
             tags: vec![],
             user: None,
             source: DiscoverySource::Api,
+            is_self: false,
         };
         assert_eq!(device.primary_address(), Some("x.ts.net"));
     }
