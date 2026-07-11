@@ -138,6 +138,14 @@ export interface Credential {
 
 export type SessionStatus = "connecting" | "open" | "error" | "closed";
 
+/** A single timestamped entry in a session's connection log. */
+export interface SessionLogEntry {
+  /** Epoch milliseconds. */
+  at: number;
+  level: "info" | "error";
+  message: string;
+}
+
 /** What kind of view a session tab renders. */
 export type SessionKind = "screen" | "files";
 
@@ -160,4 +168,6 @@ export interface SessionTab {
   sftpId?: string;
   status: SessionStatus;
   error?: string;
+  /** Timestamped connection lifecycle log, newest last. */
+  log: SessionLogEntry[];
 }

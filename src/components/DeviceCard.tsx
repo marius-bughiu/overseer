@@ -3,7 +3,12 @@ import { Activity, Copy, Laptop, MonitorPlay, Star, Trash2 } from "lucide-react"
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 import { tcpPing } from "../lib/api";
-import { osLabel, primaryAddress, relativeTime } from "../lib/devices";
+import {
+  osLabel,
+  primaryAddress,
+  recommendedProtocol,
+  relativeTime,
+} from "../lib/devices";
 import { useStore } from "../lib/store";
 import type { Device, Protocol } from "../lib/types";
 import { OsIcon } from "./OsIcon";
@@ -26,12 +31,15 @@ export function DeviceCard({
 }) {
   const favorites = useStore((s) => s.settings.favorites);
   const toggleFavorite = useStore((s) => s.toggleFavorite);
-  const preferredProtocol = useStore((s) => s.settings.preferredProtocol);
   const pushToast = useStore((s) => s.pushToast);
   const isFavorite = favorites.includes(device.id);
 
   const address = primaryAddress(device);
   const seen = relativeTime(device.lastSeen);
+  // Probe the port the recommended protocol for this machine's OS uses, so the
+  // check matches what "Connect" would default to (e.g. VNC 5900 for a Mac).
+  const probeProtocol = recommendedProtocol(device.os);
+  const probePort = DEFAULT_PORT[probeProtocol];
 
   const [ping, setPing] = useState<"idle" | "pinging" | number | "down">(
     "idle",
@@ -49,7 +57,7 @@ export function DeviceCard({
   async function doPing() {
     setPing("pinging");
     try {
-      const ms = await tcpPing(address, DEFAULT_PORT[preferredProtocol]);
+      const ms = await tcpPing(address, probePort);
       setPing(ms === null ? "down" : ms);
     } catch {
       setPing("down");
@@ -124,11 +132,18 @@ export function DeviceCard({
                     ? "text-slate-500"
                     : "text-emerald-400"
               }`}
+              title={
+                ping === "pinging"
+                  ? `Checking ${probeProtocol.toUpperCase()} port ${probePort}…`
+                  : ping === "down"
+                    ? `${probeProtocol.toUpperCase()} port ${probePort} is not reachable`
+                    : `${probeProtocol.toUpperCase()} port ${probePort} reachable in ${ping}ms`
+              }
             >
               {ping === "pinging"
                 ? "…"
                 : ping === "down"
-                  ? "down"
+                  ? `${probePort} down`
                   : `${ping}ms`}
             </span>
           )}
@@ -136,7 +151,7 @@ export function DeviceCard({
             className="btn-subtle p-1 text-slate-500"
             onClick={() => void doPing()}
             aria-label="Ping device"
-            title={`Ping ${preferredProtocol.toUpperCase()} port`}
+            title={`Check ${probeProtocol.toUpperCase()} port ${probePort} is reachable`}
           >
             <Activity size={14} />
           </button>

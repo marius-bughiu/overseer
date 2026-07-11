@@ -177,6 +177,7 @@ interface AppStore {
   closeSession: (id: string) => void;
   setActiveTab: (id: string) => void;
   updateSession: (id: string, patch: Partial<SessionTab>) => void;
+  logSession: (id: string, level: "info" | "error", message: string) => void;
 
   // per-device settings & extras
   setDeviceMac: (deviceId: string, mac: string) => Promise<void>;
@@ -450,14 +451,26 @@ export const useStore = create<AppStore>((set, get) => ({
       width: args.width ?? null,
       height: args.height ?? null,
       status: "connecting",
+      log: [
+        {
+          at: Date.now(),
+          level: "info",
+          message: `Connecting to ${args.host}:${args.port} over ${args.protocol.toUpperCase()}…`,
+        },
+      ],
     };
     set({ sessions: [...get().sessions, tab], activeTab: id });
 
     try {
       const wsUrl = await connectProtocol(args);
-      get().updateSession(id, { wsUrl, status: "open" });
+      // The bridge is open, but the session is not "connected" until the viewer
+      // (noVNC / xterm / canvas) reports a live connection. Stay "connecting" so
+      // a bridge that immediately drops doesn't masquerade as Connected.
+      get().updateSession(id, { wsUrl, status: "connecting" });
+      get().logSession(id, "info", "Bridge ready — negotiating with the remote…");
     } catch (e) {
       get().updateSession(id, { status: "error", error: String(e) });
+      get().logSession(id, "error", String(e));
       get().pushToast("error", `Could not open session: ${String(e)}`);
     }
   },
@@ -475,6 +488,13 @@ export const useStore = create<AppStore>((set, get) => ({
       password: args.password ?? null,
       keyPath: args.keyPath ?? null,
       status: "connecting",
+      log: [
+        {
+          at: Date.now(),
+          level: "info",
+          message: `Opening SFTP to ${args.host}:${args.port}…`,
+        },
+      ],
     };
     set({ sessions: [...get().sessions, tab], activeTab: id });
     try {
@@ -486,8 +506,10 @@ export const useStore = create<AppStore>((set, get) => ({
         keyPath: args.keyPath ?? null,
       });
       get().updateSession(id, { sftpId, status: "open" });
+      get().logSession(id, "info", "Connected.");
     } catch (e) {
       get().updateSession(id, { status: "error", error: String(e) });
+      get().logSession(id, "error", String(e));
       get().pushToast("error", `Could not open files: ${String(e)}`);
     }
   },
@@ -502,6 +524,7 @@ export const useStore = create<AppStore>((set, get) => ({
       sftpId: undefined,
       error: undefined,
     });
+    get().logSession(id, "info", "Reconnecting…");
     try {
       if (s.kind === "files") {
         const sftpId = await sftp.connect({
@@ -512,6 +535,7 @@ export const useStore = create<AppStore>((set, get) => ({
           keyPath: s.keyPath ?? null,
         });
         get().updateSession(id, { sftpId, status: "open" });
+        get().logSession(id, "info", "Connected.");
       } else {
         const wsUrl = await connectProtocol({
           title: s.title,
@@ -524,10 +548,12 @@ export const useStore = create<AppStore>((set, get) => ({
           width: s.width,
           height: s.height,
         });
-        get().updateSession(id, { wsUrl, status: "open" });
+        get().updateSession(id, { wsUrl, status: "connecting" });
+        get().logSession(id, "info", "Bridge ready — negotiating with the remote…");
       }
     } catch (e) {
       get().updateSession(id, { status: "error", error: String(e) });
+      get().logSession(id, "error", String(e));
     }
   },
 
@@ -550,6 +576,21 @@ export const useStore = create<AppStore>((set, get) => ({
     set({
       sessions: get().sessions.map((s) =>
         s.id === id ? { ...s, ...patch } : s,
+      ),
+    });
+  },
+
+  logSession(id, level, message) {
+    set({
+      sessions: get().sessions.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              // Keep only the most recent entries so a flapping session can't
+              // grow the log without bound.
+              log: [...s.log, { at: Date.now(), level, message }].slice(-100),
+            }
+          : s,
       ),
     });
   },

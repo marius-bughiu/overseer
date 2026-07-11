@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Circle,
   Clipboard,
   ClipboardPaste,
@@ -7,6 +8,7 @@ import {
   Maximize2,
   RefreshCw,
   Square,
+  Unplug,
   X,
 } from "lucide-react";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
@@ -49,12 +51,14 @@ export function SessionHost({ session }: { session: SessionTab }) {
   const updateSession = useStore((s) => s.updateSession);
   const closeSession = useStore((s) => s.closeSession);
   const reopenSession = useStore((s) => s.reopenSession);
+  const logSession = useStore((s) => s.logSession);
   const autoReconnect = useStore((s) => s.settings.autoReconnect);
   const snippets = useStore((s) => s.settings.snippets);
   const pushToast = useStore((s) => s.pushToast);
 
   const hostRef = useRef<HTMLDivElement>(null);
   const attempts = useRef(0);
+  const gaveUp = useRef(false);
   const [snippetMenu, setSnippetMenu] = useState(false);
   const [recording, setRecording] = useState(() => isRecording(session.id));
 
@@ -112,8 +116,15 @@ export function SessionHost({ session }: { session: SessionTab }) {
   }
 
   const onStatus = useCallback(
-    (status: SessionStatus) => updateSession(session.id, { status }),
-    [session.id, updateSession],
+    (status: SessionStatus) => {
+      updateSession(session.id, { status });
+      if (status === "open") logSession(session.id, "info", "Connected.");
+      else if (status === "closed")
+        logSession(session.id, "info", "Disconnected.");
+      else if (status === "error")
+        logSession(session.id, "error", "The viewer reported a connection error.");
+    },
+    [session.id, updateSession, logSession],
   );
 
   function toggleFullscreen() {
@@ -125,18 +136,36 @@ export function SessionHost({ session }: { session: SessionTab }) {
 
   const reconnect = useCallback(() => {
     attempts.current = 0;
+    gaveUp.current = false;
     return reopenSession(session.id);
   }, [reopenSession, session.id]);
 
   // Bounded auto-reconnect on an unexpected drop (max 3 attempts per episode).
   useEffect(() => {
     if (session.status === "open") attempts.current = 0;
-    if (autoReconnect && session.status === "closed" && attempts.current < 3) {
+    if (session.status !== "closed") {
+      gaveUp.current = false;
+      return;
+    }
+    if (!autoReconnect) return;
+    if (attempts.current < 3) {
       attempts.current += 1;
+      logSession(
+        session.id,
+        "info",
+        `Auto-reconnecting (attempt ${attempts.current} of 3)…`,
+      );
       const t = setTimeout(() => void reopenSession(session.id), 1500);
       return () => clearTimeout(t);
+    } else if (!gaveUp.current) {
+      gaveUp.current = true;
+      logSession(
+        session.id,
+        "error",
+        "Gave up after 3 reconnect attempts. Click Reconnect to try again.",
+      );
     }
-  }, [session.status, autoReconnect, reopenSession, session.id]);
+  }, [session.status, autoReconnect, reopenSession, session.id, logSession]);
 
   return (
     <div ref={hostRef} className="flex h-full flex-col bg-ink-950">
@@ -239,48 +268,109 @@ export function SessionHost({ session }: { session: SessionTab }) {
       </div>
 
       <div className="relative min-h-0 flex-1">
-        {session.status === "error" ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-            <p className="max-w-md text-sm text-red-300">
-              {session.error ?? "Session failed."}
-            </p>
-            <button className="btn-ghost" onClick={() => void reconnect()}>
-              <RefreshCw size={15} /> Retry
-            </button>
-          </div>
-        ) : session.kind === "files" ? (
-          session.sftpId ? (
-            <FileBrowser session={session} />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <Loader2 size={24} className="animate-spin text-brand-400" />
-            </div>
-          )
-        ) : !session.wsUrl ? (
-          <div className="flex h-full items-center justify-center">
-            <Loader2 size={24} className="animate-spin text-brand-400" />
-          </div>
-        ) : session.protocol === "ssh" || session.protocol === "telnet" ? (
-          <SshTerminal
-            wsUrl={session.wsUrl}
-            sessionId={session.id}
-            onStatus={onStatus}
-          />
-        ) : session.protocol === "rdp" ? (
-          <RdpViewer
-            wsUrl={session.wsUrl}
-            sessionId={session.id}
-            onStatus={onStatus}
-          />
-        ) : (
-          <VncViewer
-            wsUrl={session.wsUrl}
-            password={session.password}
-            sessionId={session.id}
-            onStatus={onStatus}
-          />
+        {/* The viewer mounts as soon as a bridge URL exists so it can drive the
+            connection; the overlay below reports status until it's live. */}
+        {session.kind === "files"
+          ? session.sftpId && <FileBrowser session={session} />
+          : session.wsUrl &&
+            (session.protocol === "ssh" || session.protocol === "telnet" ? (
+              <SshTerminal
+                wsUrl={session.wsUrl}
+                sessionId={session.id}
+                onStatus={onStatus}
+              />
+            ) : session.protocol === "rdp" ? (
+              <RdpViewer
+                wsUrl={session.wsUrl}
+                sessionId={session.id}
+                onStatus={onStatus}
+              />
+            ) : (
+              <VncViewer
+                wsUrl={session.wsUrl}
+                password={session.password}
+                sessionId={session.id}
+                onStatus={onStatus}
+              />
+            ))}
+
+        {session.status !== "open" && (
+          <ConnectionState session={session} onReconnect={() => void reconnect()} />
         )}
       </div>
+    </div>
+  );
+}
+
+/** Two-digit `HH:MM:SS` for a log timestamp. */
+function fmtLogTime(ms: number): string {
+  const d = new Date(ms);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+/**
+ * Overlay shown while a session is not live (connecting / disconnected /
+ * errored). It surfaces the current status, any error, and the full connection
+ * log so the user can see exactly what happened instead of a silent flap.
+ */
+function ConnectionState({
+  session,
+  onReconnect,
+}: {
+  session: SessionTab;
+  onReconnect: () => void;
+}) {
+  const connecting = session.status === "connecting";
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-ink-950/92 p-6 text-center backdrop-blur-sm">
+      <div className="flex items-center gap-2 text-sm">
+        {connecting ? (
+          <Loader2 size={18} className="animate-spin text-brand-400" />
+        ) : session.status === "error" ? (
+          <AlertTriangle size={18} className="text-red-400" />
+        ) : (
+          <Unplug size={18} className="text-slate-400" />
+        )}
+        <span className="font-medium text-slate-200">
+          {STATUS_LABEL[session.status]}
+        </span>
+      </div>
+
+      {session.status === "error" && session.error && (
+        <p className="max-w-md text-sm text-red-300">{session.error}</p>
+      )}
+
+      <div className="w-full max-w-md text-left">
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Connection log
+        </div>
+        <div className="max-h-48 overflow-y-auto rounded-lg border border-ink-700 bg-ink-900/80 p-2 font-mono text-xs">
+          {session.log.length === 0 ? (
+            <p className="text-slate-500">No activity yet.</p>
+          ) : (
+            <ul className="space-y-0.5">
+              {session.log.map((e, i) => (
+                <li
+                  key={i}
+                  className={
+                    e.level === "error" ? "text-red-300" : "text-slate-400"
+                  }
+                >
+                  <span className="text-slate-600">{fmtLogTime(e.at)}</span>{" "}
+                  {e.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {!connecting && (
+        <button className="btn-ghost" onClick={onReconnect}>
+          <RefreshCw size={15} /> Reconnect
+        </button>
+      )}
     </div>
   );
 }

@@ -94,6 +94,7 @@ export function ConnectDialog({
   const [group, setGroupValue] = useState(savedGroup);
   const [scanning, setScanning] = useState(false);
   const [openPorts, setOpenPorts] = useState<number[]>([]);
+  const [scanned, setScanned] = useState(false);
   const [keyPath, setKeyPath] = useState("");
   const [width, setWidth] = useState<number>(
     profile?.width ?? DEFAULT_RES.width,
@@ -109,15 +110,31 @@ export function ConnectDialog({
   }
 
   async function scanPorts() {
+    const target = host.trim();
+    if (!target) return;
     setScanning(true);
     try {
-      setOpenPorts(await portScan(host.trim()));
+      const found = await portScan(target);
+      setOpenPorts(found);
+      setScanned(true);
+      pushToast(
+        found.length > 0 ? "success" : "info",
+        found.length > 0
+          ? `Found ${found.length} open port${found.length === 1 ? "" : "s"} on ${target}: ${found.join(", ")}`
+          : `No common remote-access ports are open on ${target}.`,
+      );
     } catch (err) {
       pushToast("error", String(err));
     } finally {
       setScanning(false);
     }
   }
+
+  // A previous scan's result no longer applies once the target host changes.
+  useEffect(() => {
+    setScanned(false);
+    setOpenPorts([]);
+  }, [host]);
 
   const embeddable = EMBEDDABLE.includes(protocol);
   const effectiveMode: Mode = embeddable ? mode : "external";
@@ -387,19 +404,30 @@ export function ConnectDialog({
           >
             {scanning ? "Scanning…" : "Scan open ports"}
           </button>
-          {openPorts.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {openPorts.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  className="chip hover:border-brand-600"
-                  onClick={() => setPort(p)}
-                >
-                  {p}
-                </button>
-              ))}
+          {scanned && !scanning && openPorts.length > 0 && (
+            <div className="mt-1.5">
+              <p className="mb-1 text-xs text-slate-500">
+                Open ports — tap one to use it:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {openPorts.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className="chip hover:border-brand-600"
+                    onClick={() => setPort(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
             </div>
+          )}
+          {scanned && !scanning && openPorts.length === 0 && (
+            <p className="mt-1.5 text-xs text-amber-400">
+              No common remote-access ports are open on {host.trim()}. The
+              machine may be offline or not accepting this protocol.
+            </p>
           )}
         </div>
 

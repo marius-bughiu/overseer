@@ -33,6 +33,33 @@ use crate::rdp::{self, RdpInput, RdpParams};
 /// before giving up and freeing the port.
 const ACCEPT_TIMEOUT_SECS: u64 = 30;
 
+/// How long to wait for the remote TCP connection before reporting failure.
+const CONNECT_TIMEOUT_SECS: u64 = 10;
+
+/// Connect to `host:port` with a bounded timeout, mapping a refused/unreachable
+/// port or a timeout to a descriptive [`AppError::Session`]. Connecting up-front
+/// (rather than inside the bridge task) lets the failure surface to the UI as a
+/// command error instead of a bridge that accepts the browser WebSocket and then
+/// silently closes — which the frontend can only read as a mysterious instant
+/// disconnect.
+async fn connect_remote(host: &str, port: u16) -> Result<tokio::net::TcpStream> {
+    let connect = tokio::net::TcpStream::connect((host, port));
+    match tokio::time::timeout(
+        std::time::Duration::from_secs(CONNECT_TIMEOUT_SECS),
+        connect,
+    )
+    .await
+    {
+        Ok(Ok(stream)) => Ok(stream),
+        Ok(Err(e)) => Err(AppError::Session(format!(
+            "could not connect to {host}:{port}: {e}"
+        ))),
+        Err(_) => Err(AppError::Session(format!(
+            "connection to {host}:{port} timed out after {CONNECT_TIMEOUT_SECS}s"
+        ))),
+    }
+}
+
 #[derive(Deserialize)]
 struct ResizeMsg {
     cols: u32,
@@ -100,14 +127,13 @@ async fn accept_ws(
 /// Open a VNC bridge to `host:port`. Returns the loopback WebSocket URL the
 /// frontend (noVNC) should connect to.
 pub async fn open_vnc(host: String, port: u16) -> Result<String> {
+    // Connect to the remote up-front so an unreachable/refused VNC port fails
+    // the command (and shows a real error) instead of silently dropping later.
+    let tcp = connect_remote(&host, port).await?;
     let (listener, token, url) = bind_loopback().await?;
     tokio::spawn(async move {
         let Some(ws) = accept_ws(listener, token).await else {
             return;
-        };
-        let tcp = match tokio::net::TcpStream::connect((host.as_str(), port)).await {
-            Ok(s) => s,
-            Err(_) => return,
         };
         bridge_ws_tcp(ws, tcp).await;
     });
@@ -174,14 +200,13 @@ const SE: u8 = 240;
 /// refuse all options) and stripped from the stream sent to the terminal; the
 /// frontend renders it with xterm.js like SSH.
 pub async fn open_telnet(host: String, port: u16) -> Result<String> {
+    // Connect up-front so an unreachable/refused port fails the command with a
+    // real error instead of silently dropping the bridge (see `open_vnc`).
+    let tcp = connect_remote(&host, port).await?;
     let (listener, token, url) = bind_loopback().await?;
     tokio::spawn(async move {
         let Some(ws) = accept_ws(listener, token).await else {
             return;
-        };
-        let tcp = match tokio::net::TcpStream::connect((host.as_str(), port)).await {
-            Ok(s) => s,
-            Err(_) => return,
         };
         bridge_telnet(ws, tcp).await;
     });
