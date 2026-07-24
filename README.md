@@ -6,7 +6,7 @@
 
 ### The cross-platform Tailscale remote desktop manager
 
-**Discover every machine on your tailnet and connect over RDP or VNC — from Windows, macOS, Linux, Android, and iOS — with credentials sealed in an encrypted vault.**
+**Discover every machine on your tailnet and connect over RDP, VNC, SSH or Telnet — from Windows, macOS, Linux, Android, and iOS — with credentials sealed in an encrypted vault.**
 
 [![CI](https://github.com/marius-bughiu/overseer/actions/workflows/ci.yml/badge.svg)](https://github.com/marius-bughiu/overseer/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/marius-bughiu/overseer?display_name=tag&sort=semver)](https://github.com/marius-bughiu/overseer/releases)
@@ -23,9 +23,9 @@
 
 ## What is Overseer?
 
-**Overseer** is a free, open-source **remote desktop manager built for [Tailscale](https://tailscale.com)**. It automatically lists the machines on your tailnet and lets you launch a secure **RDP** or **VNC** session to any of them in one tap — over Tailscale's encrypted WireGuard® mesh, with no port forwarding, no public IPs, and no exposed RDP ports.
+**Overseer** is a free, open-source **remote desktop manager built for [Tailscale](https://tailscale.com)**. It automatically lists the machines on your tailnet and lets you open a secure **RDP**, **VNC**, **SSH** or **Telnet** session to any of them in one tap — over Tailscale's encrypted WireGuard® mesh, with no port forwarding, no public IPs, and no exposed RDP ports.
 
-It runs everywhere Tailscale does: **Windows, macOS, Linux, Android, and iOS**. It's a single, fast, native-feeling app built with [**Tauri 2**](https://tauri.app) and Rust — typically under 15 MB, not a 200 MB Electron bundle.
+It runs everywhere Tailscale does: **Windows, macOS, Linux, Android, and iOS**. It's a single, fast, native-feeling app built with [**Tauri 2**](https://tauri.app) and Rust — a real native webview, not a 200 MB Electron bundle.
 
 > Think of it as the address book + launcher for all your remote machines, powered by the private network you already trust.
 
@@ -37,13 +37,15 @@ It runs everywhere Tailscale does: **Windows, macOS, Linux, Android, and iOS**. 
 ## ✨ Features
 
 - 🔍 **Automatic Tailscale discovery** — every device on your tailnet, online/offline status, OS, IPs and ACL tags, with no manual host entry.
-- 🖥️ **One-tap RDP & VNC** — pick a machine, pick a protocol, connect. Overseer hands the session to your platform's remote desktop client.
-- 🔐 **Encrypted credential vault** — usernames and passwords are stored with [IOTA Stronghold](https://github.com/iotaledger/stronghold.rs), encrypted at rest behind a master password. Passwords are **never** written into launch URIs or `.rdp` files.
-- 🌐 **Two discovery modes** — the **Tailscale API** (works on every platform, including mobile) or the local **`tailscale` CLI** (zero config on desktop).
+- 🪟 **Embedded sessions, in-app** — **RDP**, **VNC**, **SSH** and **Telnet** open as tabs inside Overseer. No external client needed; you can still hand a session off to your OS client if you prefer.
+- 📂 **SFTP file browser** — drag files to and from any SSH host without leaving the app.
+- 🔐 **Encrypted credential vault** — usernames, passwords, SSH keys and TOTP secrets are stored with [IOTA Stronghold](https://github.com/iotaledger/stronghold.rs), encrypted at rest behind a master password. Passwords are **never** written into launch URIs or `.rdp` files.
+- 🌐 **Two discovery modes** — the local **`tailscale` CLI** (zero config, the default) or the **Tailscale API** (works on every platform, including mobile). Manual hosts are supported too.
+- 🗂️ **Profiles, folders & history** — organize connections, then reconnect from the command palette (<kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>K</kbd>).
+- 📶 **Health at a glance** — per-machine latency pings, port scans, live session thumbnails, and Wake-on-LAN for sleeping boxes.
 - ⭐ **Favorites, search & filters** — find the machine you need instantly, even across a large tailnet.
-- 📋 **Quick copy** — grab a machine's Tailscale IP or MagicDNS name with one click.
 - 🪶 **Tiny & native** — Rust + Tauri 2, a real native webview, no Electron, no telemetry.
-- 🌙 **Polished dark UI** — designed for the late-night ops session.
+- 🌗 **Light & dark themes**, plus a localization framework with a language picker.
 - 🆓 **Open source, MIT licensed** — audit it, fork it, ship it.
 
 ## 🔑 Why Tailscale + Overseer?
@@ -59,24 +61,38 @@ Traditional remote desktop means exposing RDP (port 3389) to the internet — on
 
 ## 📥 Download
 
-> ⚠️ Overseer is in active early development (`v0.1.x`). Pre-built binaries are published on the [**Releases**](https://github.com/marius-bughiu/overseer/releases) page as they become available. Until then, [build from source](#-build-from-source).
+Grab the latest installer from the [**Releases**](https://github.com/marius-bughiu/overseer/releases/latest) page.
 
 | Platform | Artifact |
 | --- | --- |
-| Windows | `.msi` / `.exe` installer |
-| macOS | `.dmg` (Apple Silicon & Intel) |
-| Linux | `.AppImage` / `.deb` / `.rpm` |
+| **Windows** (x64) | `Overseer_<version>_x64-setup.exe` or `Overseer_<version>_x64_en-US.msi` |
+| **macOS** (Apple Silicon) | `Overseer_<version>_aarch64.dmg` |
+| **macOS** (Intel) | `Overseer_<version>_x64.dmg` |
+| **Linux** (x64) | `.AppImage`, `.deb`, or `.rpm` |
 | Android | `.apk` / Play Store *(planned)* |
 | iOS | App Store / TestFlight *(planned)* |
 
+> ⚠️ Overseer is in active early development (`v0.1.x`). Expect rough edges, and please [file issues](https://github.com/marius-bughiu/overseer/issues).
+
+### Opening an unsigned build
+
+These binaries are **not yet code-signed or notarized** — code-signing certificates cost money that this project doesn't have yet. The OS will warn you on first launch:
+
+- **macOS** — the first launch is blocked as being from an unidentified developer. Right-click the app in `/Applications` → **Open** → **Open**, or clear the quarantine flag:
+  ```bash
+  xattr -dr com.apple.quarantine /Applications/Overseer.app
+  ```
+- **Windows** — SmartScreen shows "Windows protected your PC". Click **More info** → **Run anyway**.
+
+If you'd rather not trust an unsigned binary, [build from source](#-build-from-source) — it's three commands.
+
 ## 🚀 How it works
 
-1. **Discover** — Overseer asks Tailscale for your devices, either through the [Tailscale REST API](https://tailscale.com/api) (using an access token you provide) or the local `tailscale status` command.
-2. **Choose** — you select a machine, a protocol (RDP/VNC), a port, and optionally a saved credential.
-3. **Connect** — Overseer builds the correct launch artifact and opens it with the platform's remote desktop client:
-   - **Desktop RDP** → generates a `.rdp` file and opens it (`mstsc` on Windows, *Windows App* on macOS).
-   - **Mobile RDP** → opens an `rdp://` deep link into the Microsoft Remote Desktop / Windows App client.
-   - **VNC (all platforms)** → opens a `vnc://` URL handled by Screen Sharing / RealVNC / your viewer of choice.
+1. **Discover** — Overseer asks Tailscale for your devices, either through the local `tailscale status` command (the default) or the [Tailscale REST API](https://tailscale.com/api) using an access token you provide.
+2. **Choose** — you select a machine, a protocol (RDP/VNC/SSH/Telnet), a port, and optionally a saved credential. Overseer only offers the protocols that make sense for that machine's OS.
+3. **Connect** — either way you like:
+   - **Embedded (default)** → the session opens as a tab inside Overseer. RDP is driven by [IronRDP](https://github.com/Devolutions/IronRDP), VNC by [noVNC](https://novnc.com), SSH/SFTP by [russh](https://github.com/Eugeny/russh), all rendered straight into the app.
+   - **External** → Overseer builds the correct launch artifact and hands it to your OS: a `.rdp` file (`mstsc` on Windows, *Windows App* on macOS), an `rdp://` deep link on mobile, or a `vnc://` URL for Screen Sharing / RealVNC.
 
 All traffic flows over your encrypted Tailscale connection. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full design.
 
@@ -88,8 +104,11 @@ All traffic flows over your encrypted Tailscale connection. See [`docs/ARCHITECT
 ## 🛠️ Tech stack
 
 - **[Tauri 2](https://tauri.app)** — cross-platform desktop **and** mobile shell.
-- **Rust** — the backend, with a dependency-free [`overseer-core`](crates/overseer-core) crate holding the (unit-tested) discovery and connection logic.
+- **Rust** — the backend, with a dependency-light [`overseer-core`](crates/overseer-core) crate holding the (unit-tested) discovery, connection, Wake-on-LAN and credential-import logic.
 - **React + TypeScript + Vite + Tailwind CSS** — the frontend.
+- **[IronRDP](https://github.com/Devolutions/IronRDP)** — the embedded RDP client.
+- **[noVNC](https://novnc.com)** + **[xterm.js](https://xtermjs.org)** — the embedded VNC and terminal front ends.
+- **[russh](https://github.com/Eugeny/russh)** — embedded SSH and SFTP.
 - **IOTA Stronghold** — the encrypted secrets vault.
 - **reqwest (rustls)** — the Tailscale API client.
 
@@ -151,14 +170,16 @@ Read the full model in [`SECURITY.md`](SECURITY.md), and please report vulnerabi
 
 ## 🗺️ Roadmap
 
-- [ ] Pre-built signed binaries for all desktop platforms
+- [x] Embedded viewers — VNC, RDP, SSH and Telnet, in-app
+- [x] SFTP file transfer
+- [x] Connection profiles, folders, history & quick-reconnect
+- [x] Wake-on-LAN via a tailnet peer
+- [x] Pre-built binaries for all desktop platforms
+- [ ] **Signed & notarized** binaries (needs a code-signing certificate)
 - [ ] Android & iOS store releases
 - [ ] OAuth client support for Tailscale discovery
-- [ ] Optional embedded VNC viewer (no external client needed)
-- [ ] SSH connections
-- [ ] Per-machine connection presets (resolution, gateway, redirects)
-- [ ] Connection history & quick-reconnect
-- [ ] Wake-on-LAN via a tailnet peer
+- [ ] In-app updater
+- [ ] Full per-machine RDP presets (gateway, device redirects)
 
 See the [open issues](https://github.com/marius-bughiu/overseer/issues) and [CONTRIBUTING.md](CONTRIBUTING.md) to help shape it.
 
@@ -169,7 +190,10 @@ Contributions are very welcome! Whether it's a bug report, a feature idea, docs,
 ## ❓ FAQ
 
 **Does Overseer implement RDP/VNC itself?**
-Not yet — it's a *manager* that launches your platform's existing client over Tailscale. An embedded VNC viewer is on the roadmap.
+Yes. RDP, VNC, SSH and Telnet sessions run embedded in the app (IronRDP, noVNC, russh). You can still choose to hand a session off to your platform's native client if you prefer it.
+
+**Why does my OS warn me when I open it?**
+The binaries aren't code-signed yet. See [Opening an unsigned build](#opening-an-unsigned-build).
 
 **Do I need to expose RDP to the internet?**
 No. That's the whole point. Machines are reached over their private Tailscale addresses.

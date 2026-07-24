@@ -145,7 +145,8 @@ export function RdpViewer({
     };
 
     ws.onopen = () => onStatus?.("open");
-    ws.onerror = () => onStatus?.("error", "The RDP bridge connection errored.");
+    ws.onerror = () =>
+      onStatus?.("error", "The RDP bridge connection errored.");
     ws.onclose = () => onStatus?.("closed");
     ws.onmessage = (ev) => {
       const view = new DataView(ev.data as ArrayBuffer);

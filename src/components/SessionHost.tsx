@@ -134,7 +134,8 @@ export function SessionHost({ session }: { session: SessionTab }) {
         status,
         ...(status === "error" && detail ? { error: detail } : {}),
       });
-      if (status === "open") logSession(session.id, "info", detail ?? "Connected.");
+      if (status === "open")
+        logSession(session.id, "info", detail ?? "Connected.");
       else if (status === "closed")
         logSession(session.id, "info", detail ?? "Disconnected.");
       else if (status === "error")

@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Activity, Copy, Laptop, MonitorPlay, Star, Trash2 } from "lucide-react";
+import {
+  Activity,
+  Copy,
+  Laptop,
+  MonitorPlay,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 import { tcpPing } from "../lib/api";
