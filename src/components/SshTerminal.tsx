@@ -86,7 +86,8 @@ export function SshTerminal({
       term.write("\r\n\x1b[2m[overseer] session closed\x1b[0m\r\n");
       onStatus?.("closed");
     };
-    ws.onerror = () => onStatus?.("error", "The SSH bridge connection errored.");
+    ws.onerror = () =>
+      onStatus?.("error", "The SSH bridge connection errored.");
 
     const send = (data: string) => {
       if (ws.readyState === WebSocket.OPEN) ws.send(encoder.encode(data));

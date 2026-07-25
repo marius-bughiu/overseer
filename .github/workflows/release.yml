@@ -66,7 +66,29 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Overseer ${{ github.ref_name }}"
-          releaseBody: "See CHANGELOG.md for details."
+          releaseBody: |
+            See the [CHANGELOG](https://github.com/marius-bughiu/overseer/blob/main/CHANGELOG.md) for the full list of changes.
+
+            ## Downloads
+
+            | Platform | File |
+            | --- | --- |
+            | Windows (x64) | `..._x64-setup.exe` (installer) or `..._x64_en-US.msi` |
+            | macOS (Apple Silicon) | `..._aarch64.dmg` |
+            | macOS (Intel) | `..._x64.dmg` |
+            | Linux (x64) | `.AppImage`, `.deb` or `.rpm` |
+
+            ## ⚠️ These builds are not code-signed
+
+            Overseer doesn't have a code-signing certificate yet, so your OS will
+            warn you the first time you open it.
+
+            - **macOS** — right-click the app in `/Applications` → **Open** → **Open**,
+              or run `xattr -dr com.apple.quarantine /Applications/Overseer.app`.
+            - **Windows** — on the SmartScreen prompt, click **More info** → **Run anyway**.
+
+            If you'd rather not trust an unsigned binary, you can
+            [build from source](https://github.com/marius-bughiu/overseer#-build-from-source).
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

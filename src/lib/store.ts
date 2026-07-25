@@ -486,7 +486,11 @@ export const useStore = create<AppStore>((set, get) => ({
       // (noVNC / xterm / canvas) reports a live connection. Stay "connecting" so
       // a bridge that immediately drops doesn't masquerade as Connected.
       get().updateSession(id, { wsUrl, status: "connecting" });
-      get().logSession(id, "info", "Bridge ready — negotiating with the remote…");
+      get().logSession(
+        id,
+        "info",
+        "Bridge ready — negotiating with the remote…",
+      );
     } catch (e) {
       const raw = String(e);
       const hint = connectionHint(args.protocol, raw);
@@ -574,7 +578,11 @@ export const useStore = create<AppStore>((set, get) => ({
           height: s.height,
         });
         get().updateSession(id, { wsUrl, status: "connecting" });
-        get().logSession(id, "info", "Bridge ready — negotiating with the remote…");
+        get().logSession(
+          id,
+          "info",
+          "Bridge ready — negotiating with the remote…",
+        );
       }
     } catch (e) {
       const raw = String(e);

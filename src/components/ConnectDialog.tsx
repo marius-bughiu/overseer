@@ -329,7 +329,9 @@ export function ConnectDialog({
         </button>
         <div>
           <span className="label">Protocol</span>
-          <div className={`grid gap-2 ${GRID_COLS[supported.length] ?? "grid-cols-4"}`}>
+          <div
+            className={`grid gap-2 ${GRID_COLS[supported.length] ?? "grid-cols-4"}`}
+          >
             {supported.map((p) => (
               <button
                 key={p}
