@@ -39,7 +39,7 @@ log = "0.4"
 
 # Embedded in-app sessions: a localhost WebSocket bridge (VNC raw bytes) and a
 # pure-Rust SSH client (terminal streaming). Pure Rust → builds on mobile too.
-tokio-tungstenite = "0.24"
+tokio-tungstenite = "0.29"
 futures-util = "0.3"
 russh = "0.55"
 rand = "0.9"
