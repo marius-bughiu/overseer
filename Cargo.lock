@@ -4359,7 +4359,7 @@ dependencies = [
  "ironrdp-tls",
  "log",
  "overseer-core",
- "rand 0.8.6",
+ "rand 0.9.4",
  "reqwest 0.12.28",
  "russh",
  "russh-sftp",
