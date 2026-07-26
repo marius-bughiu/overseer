@@ -42,7 +42,7 @@ log = "0.4"
 tokio-tungstenite = "0.24"
 futures-util = "0.3"
 russh = "0.55"
-rand = "0.9"
+rand = "0.10"
 
 # Pure-Rust RDP client for the embedded, in-app RDP session.
 ironrdp = { version = "0.14", features = [
